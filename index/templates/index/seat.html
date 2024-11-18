@@ -1,0 +1,66 @@
+{% extends 'index/base.html' %}
+{% load static %}
+{% block title %}
+    预约座位
+{% endblock %}
+
+{% block index_bookings %}
+    active
+{% endblock %}
+
+{% block index %}
+    <main class="mb-5">
+        <script type="text/javascript">
+            {#alert("你也有预约，请取消预约后重新预约！");#}
+            {{ msg }}("你有预约，请取消预约后重新预约！");
+        </script>
+        <div class="container px-4 py-3" id="custom-cards">
+            <h5 class="pb-2 m-1">请选择自习室、座位和时间</h5>
+            <form action="{% url 'seat' room.id %}" class="row pb-2 g-3 border-bottom">
+                {% csrf_token %}
+                <div class="col-md-3">
+                    <label for="inputCity" class="form-label">自习室</label>
+                    <select name="room_id" id="inputCity" class="form-select">
+                        {% for i in rooms %}
+                            <option value="{{ i.id }}" {% if room_id == i.id %} selected {% endif %}>{{ i.name }}
+                            </option>
+                        {% endfor %}
+
+
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="inputState" class="form-label">日期</label>
+                    <select name="day" id="inputState" class="form-select">
+                        <option value="1" {% if time_selected_r == 1 %} selected {% endif %}>今天</option>
+                        <option value="2" {% if time_selected_r == 2 %} selected {% endif %}>明天</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="inputState" class="form-label">时间段</label>
+                    <select name="time" id="inputState" class="form-select">
+                        <option value="1" {% if time_selected_s == 1 %} selected {% endif %} >上午</option>
+                        <option value="2" {% if time_selected_s == 2 %} selected {% endif %}>下午</option>
+                        <option value="3" {% if time_selected_s == 3 %} selected {% endif %}>晚自习</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="inputZip" class="form-label">查看</label>
+                    <button id="inputZip" type="submit" class="form-control btn btn-outline-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                             class="bi bi-search" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                        </svg>
+                        查看
+                    </button>
+                </div>
+            </form>
+            {% block seat %}
+
+            {% endblock %}
+        </div>
+    </main>
+
+{% endblock %}

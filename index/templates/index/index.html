@@ -1,0 +1,20 @@
+{% extends 'index/base.html' %}
+
+{% block title %}
+    首页
+{% endblock %}
+
+{% block index_active %}
+    active
+{% endblock %}
+
+{% block index %}
+    <main class="container">
+        {% for i in text %}
+            <div class="bg-light p-4 rounded mt-3">
+                <h4 class="text-center">{{ i.title }}</h4>
+                <p class="text-black">&emsp;&emsp;{{ i.text }}</p>
+            </div>
+        {% endfor %}
+    </main>
+{% endblock %}

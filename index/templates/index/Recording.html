@@ -1,0 +1,126 @@
+{% extends 'index/base.html' %}
+{% block title %}
+    预约记录
+{% endblock %}
+{% block recording_active %}
+    active
+{% endblock %}
+{% block index %}
+
+    <main class="container">
+        <div class="row">
+
+            {% for i in booking %}
+                <div class="col-md-3 col-sm-3 mt-3">
+                    <div class="p-4 rounded mt-3 h-100 {% if i.time == day %} bg-warning {% else %} bg-light {% endif %} ">
+
+
+                        <h5>日期：{{ i.time | date }}</h5>
+                        <h5>时间：
+                            {% if i.period == 1 %}
+                                上午
+                            {% elif i.period == 2 %}
+                                下午
+                            {% elif i.period == 3 %}
+                                晚上
+                            {% endif %}
+                        </h5>
+
+                        <h5>自习室：{{ i.room.name }}</h5>
+                        <h5>座位号：{{ i.number }}</h5>
+                        <h5>签到状态：
+
+                            {% if i.is_active == 1 and i.time.day != day %}
+                                <span class="text-danger">未签到</span>
+
+                            {% elif i.is_active == 1 and i.time.day == day %}
+
+                                <span class="text-warning">已预约</span>
+                            {% elif i.is_active == 2 %}
+                                <span class="text-primary">已签到</span>
+                            {% else %}
+                                <span class="text-primary">未签到</span>
+                            {% endif %}
+                        </h5>
+                        <p class="text-center">
+
+                            {% if i.time.day >= day and i.is_active == 1 and  month <= i.time.month %}
+                                <a href="{% url 'sign_url' %}" class="btn btn-outline-success">验证码签到</a>
+                                                                <a id="saoma" href="http://sao315.com/w/api/saoyisao?redirect_uri=当前页面url"
+                                                                   class="btn btn-outline-success" role="button" aria-pressed="true"><i
+                                                                        class=""></i>扫码签到</a>
+                                <a type="button" class="btn btn-outline-success" data-bs-toggle="modal"
+                                   data-bs-target="#exampleModal-{{ i.id }}">取消预约</a>
+                                <div class="modal fade" id="exampleModal-{{ i.id }}" tabindex="-1"
+                                     aria-labelledby="exampleModalLabel"
+                                     aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="exampleModalLabel">请确认一下信息！</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                        aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p class="h5">你确定取消吗？</p>
+                                                <p>日期：{{ i.time | date }}</p>
+                                                <p>自习室：{{ i.room.name }}</p>
+                                                <p>座位号：{{ i.number }}</p>
+                                                <p>时间：
+                                                    {% if i.period == 1 %}
+                                                        上午
+                                                    {% elif i.period == 2 %}
+                                                        下午
+                                                    {% elif i.period == 3 %}
+                                                        晚上
+                                                    {% endif %}</p>
+
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                    取消
+                                                </button>
+                                                <a href="{% url 'recording' %}?id={{ i.id }}"
+                                                   class="btn btn-danger">确定</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            {% else %}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            {% empty %}
+                <main class="container">
+                    <div class="bg-light p-5 rounded mt-3">
+                        <h1>你没有预约记录！！</h1>
+                    </div>
+                </main>
+            {% endfor %}
+        </div>
+    </main>
+{#    <input type="text" id="result">#}
+{#    <input type="button" value="Scan" id="saoma">#}
+    <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+    <script type="text/javascript">
+        var qr = GetQueryString("qrresult");
+        if (qr) {
+
+            $("#result").val(qr);
+
+        }
+
+        $("#saoma").click(function () {
+            location.href = "https://www.996315.com/api/scan/?redirect_uri=" + encodeURIComponent(location.href);
+        });
+
+        function GetQueryString(name) {
+            var reg = new RegExp("\\b" + name + "=([^&]*)");
+            var r = decodeURIComponent(location.href).match(reg);
+
+            if (r != null) return r[1];
+        }
+    </script>
+{% endblock %}

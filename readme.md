@@ -12,12 +12,12 @@ Python + Django + Celery + SQLitedb
 ## Main function🍳
 
 ### 1. Bioinformatics Task Submission
-Supports remote access within the local area network. 
-Supports local data upload or direct selection of sequencing data on the server. 
+#### Supports remote access within the local area network. 
+#### Supports local data upload or direct selection of sequencing data on the server. 
 ### 2. Task Management
-· Real-time updates of task status (successful/failed/queued/running)
-· Task queue management system with support for setting the maximum number of tasks
-· View HTML reports and download report files
+#### Real-time updates of task status (successful/failed/queued/running) \n
+#### Task queue management system with support for setting the maximum number of tasks
+#### View HTML reports and download report files
 
 
 ## Start🍳

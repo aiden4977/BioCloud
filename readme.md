@@ -6,7 +6,7 @@
 
 ![Django](https://img.shields.io/badge/django-4.0-blue?style=for-the-badge&logo=django&logoColor=blue)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.1-blueviolet?style=for-the-badge&logo=Bootstrap&logoColor=blueviolet)
-![Python](https://img.shields.io/badge/Python-3.12-blueviolet?style=for-the-badge&logo=Python&logoColor=blueviolet)
+![Python](https://img.shields.io/badge/Python-3.12-blueviolet?style=for-the-badge&logo=Python&logoColor=blue)
 
 Python + Django + Celery + SQLitedb + Redis
 

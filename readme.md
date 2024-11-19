@@ -1,6 +1,6 @@
 **
 
-### DBAP: a Django-based Bioinfomatics Analysis Platform
+### BioCloud: a Django-based Bioinfomatics Analysis Platform
 
 ## Related tools🛹
 
@@ -15,13 +15,9 @@ Python + Django + Celery + SQLitedb
 Supports remote access within the local area network. 
 Supports local data upload or direct selection of sequencing data on the server. 
 ## 2. Task Management
-Real-time updates of task status (successful/failed/queued/running)
-
-Task queue management system with support for setting the maximum number of tasks
-
-View HTML reports and download report files
-## 3. Reference Sequence Management
-TODO: Users upload custom reference sequences to be used as databases
+· Real-time updates of task status (successful/failed/queued/running)
+· Task queue management system with support for setting the maximum number of tasks
+· View HTML reports and download report files
 
 
 ### Start🍳

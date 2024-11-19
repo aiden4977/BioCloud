@@ -30,7 +30,8 @@ urlpatterns = [
     path('api/covid/', views.CreateJob_Covid.as_view(), name='create covid job'),
     path('api/mapping/', views.CreateJob_Mapping.as_view(), name='create mapping job'),
     path('api/handle_log/', views.handle_log, name='create handle_logb'),
-
+    path('api/resubmit/<int:pk>/', views.resubmit, name='rerun user job'),
+    
     #get info
     path('getlog/<int:pk>/', views.read_log, name='read_file'),
     path('getfastq/', views.read_fastq, name='read_file'),

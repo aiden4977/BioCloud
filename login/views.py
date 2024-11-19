@@ -224,6 +224,17 @@ def handle_log(request):
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
 
+def resubmit(request, pk):
+    # try:
+    job = JobUniversal.objects.get(id=pk)
+    if job.workfolw == 'Auroch':
+        result = execute_auroch.delay(pk)
+    if job.workfolw == 'Pod5Plotter':
+        result = execute_pod5_plotter.delay(pk)
+    # except Exception as err:
+    #     return JsonResponse({'error': f'{str(err)}'}, status=400)
+    return JsonResponse({'success': f'success'}, status=200)
+
 def read_model(request):
     logging.info('aaaa')
     import glob

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,7 @@
     body.hidden {
       display: none;
     }
+
     .fixed-header {
       position: fixed;
       top: 0;
@@ -23,38 +25,50 @@
       padding: 10px;
 
     }
+
     .content-container {
-      margin-top: 80px; /* 留出固定头部的高度 */
+      margin-top: 80px;
+      /* 留出固定头部的高度 */
     }
+
     .margin-top {
       margin-top: 20px;
     }
+
     .el-tag--light {
       height: 100%;
       padding: 0 12px;
       line-height: 0px;
     }
+
     .table-container {
-      padding: 0 200px; /* 左右留白 */
-      box-sizing: border-box; /* 包括内边距在内的总宽度 */
+      padding: 0 200px;
+      /* 左右留白 */
+      box-sizing: border-box;
+      /* 包括内边距在内的总宽度 */
     }
+
     .el-descriptions {
       background-color: #ffffff;
       width: 90%;
       margin: 40px auto 0;
     }
+
     td {
       width: 40%;
     }
+
     th {
       width: 10%;
     }
+
     .log-container {
       margin-top: 40px;
     }
+
     .log-content {
-      white-space: pre-wrap; 
-      word-wrap: break-word; 
+      white-space: pre-wrap;
+      word-wrap: break-word;
       background-color: #f5f5f5;
       border: 1px solid #dcdfe6;
       border-radius: 4px;
@@ -65,13 +79,14 @@
     }
   </style>
 </head>
+
 <body class="hidden">
   <div id="app">
     <!-- Fixed header for back and page title -->
     <div class="fixed-header">
       <el-page-header @back="goBack" content="详情页面"></el-page-header>
     </div>
-    
+
     <!-- Content container with margin to accommodate fixed header -->
     <div class="content-container">
       <el-descriptions class="margin-top" :column="2" :size="size" border>
@@ -163,7 +178,7 @@
   </div>
 
   <script>
-    window.addEventListener('load', function() {
+    window.addEventListener('load', function () {
       document.body.classList.remove('hidden');
       console.log('所有资源已加载，页面显示');
     });
@@ -205,7 +220,7 @@
         formattedParameters() {
           try {
             const params = JSON.parse(this.task.parameters);
-            return JSON.stringify(params, null, 2); 
+            return JSON.stringify(params, null, 2);
           } catch (error) {
             return '无法解析参数';
           }
@@ -249,21 +264,23 @@
           window.location.href = `/login/view_job/`;
         },
         startLogUpdate(taskId) {
-          this.fetchTasklog(taskId); 
-          setInterval(() => {
-            this.fetchTasklog(taskId);
-          }, 1000); // 每秒检查一次日志更新
-        }
+          this.fetchTasklog(taskId);
+
+              setInterval(() => {
+                this.fetchTasklog(taskId);
+              }, 2000); // 每秒检查一次日志更新
+          }
       },
       created() {
-        const taskId = {{ taskID }}; 
-        this.fetchTaskData(taskId);
-        this.startLogUpdate(taskId);
-      }
+        const taskId = {{ taskID }};
+      this.fetchTaskData(taskId);
+      this.startLogUpdate(taskId);
+    }
     };
 
     var Ctor = Vue.extend(Main);
     new Ctor().$mount('#app');
   </script>
 </body>
+
 </html>

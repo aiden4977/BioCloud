@@ -20,7 +20,8 @@ Python + Django + Celery + SQLitedb + Redis
 
 
 ## Start🍳
-python manage.py makemigrations
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py 0.0.0.0:3001
+
+  python manage.py makemigrations
+  python manage.py migrate
+  python manage.py createsuperuser
+  python manage.py 0.0.0.0:3001

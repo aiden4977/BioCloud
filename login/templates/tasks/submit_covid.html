@@ -6,6 +6,7 @@
   <title>Submit Task</title>
   <link rel="stylesheet" href="/static/css/index.css">
   <link rel="stylesheet" href="/static/js/unpkg_index.css">
+  <link rel="stylesheet" href="/static/tasks/analyse.css">
 
   <style>
     body.hidden {
@@ -21,7 +22,7 @@
       color: #333;
     }
 
-    .form-container {
+    /* .form-container {
       background-color: #fff;
       border: 2px solid #ffffff;
       border-radius: 10px;
@@ -31,7 +32,7 @@
     }
     .form-container .el-form-item {
       margin-bottom: 30px;
-    }
+    } */
     .dialog-footer {
       text-align: -webkit-center;
       margin-top: 20px;
@@ -98,7 +99,7 @@
       <el-main>
         <div class="form-container">
           <el-form ref="form" :model="form" label-width="120px">
-            <h3>提交任务</h3>
+            <h3 class="covid-analysis">新冠全基因组分析</h3>
 
             <div class="custom-divider"></div>
             <el-main>
@@ -267,7 +268,7 @@
           this.form.inputFile = this.fileList.map(file => file.name).join(', ');
         },
         beforeUpload(file) {
-          const isFastqOrFasta = file.name.endsWith('.fastq') || file.name.endsWith('.fasta') || file.name.endsWith('.fa');
+          const isFastqOrFasta = file.name.endsWith('.fastq') || file.name.endsWith('.fq') || file.name.endsWith('.gz') || file.name.endsWith('.fasta') || file.name.endsWith('.fa');
           if (!isFastqOrFasta) {
             this.$message({ message: '只能上传Fastq或Fasta格式的文件', type: 'error', duration: 500 });
           }

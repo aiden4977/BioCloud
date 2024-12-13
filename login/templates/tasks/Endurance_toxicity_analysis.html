@@ -14,7 +14,7 @@
         display: none;
       }
       body {
-        background-color: #ece5e5;
+        background-color: #f1f1f1;
         font-family: Arial, sans-serif;
       }
       h3 {
@@ -48,7 +48,7 @@
         margin-top: 10px;
       }
       .custom-select {
-        width: 100%;
+        width: 50%;
       }
 
       .alert-container {
@@ -97,17 +97,17 @@
         <el-main>
           <div class="form-container">
             <el-form ref="form" :model="form" label-width="170px">
-              <h3>最顶端的标题-标题1</h3>
+              <h3 class="covid-analysis">耐药毒力分析</h3>
               <p></p>
               <div class="custom-divider"></div>
               
-              <el-form-item label="标题2-这是一个可以输入任何字符的行编辑框" required>
+              <el-form-item label="样本名称" required>
                 <el-input v-model="form.sampleName" class="custom-select"></el-input>
               </el-form-item>
               
               
               <!-- multiple 这个表示支持多选 -->
-              <el-form-item label="标题3-上传Fastq文件(示例)" required>
+              <!-- <el-form-item label="数据类型" required>
                 <el-radio-group v-model="form.inputFileType"
                   @change="handleFileTypeChange" >
                   <el-upload
@@ -125,19 +125,73 @@
                   <div class="el-upload__text">将Fastq文件(支持多选)拖到此处</div>
                 </el-upload>
                 </el-radio-group>
-               
+              </el-form-item> -->
+              
+              
+              <el-form-item label="数据类型" required>
+                <el-radio-group v-model="form.inputFileType"
+                  @change="handleFileTypeChange">
+                  <el-radio-button label="fastq">Fastq文件</el-radio-button>
+                  <el-radio-button label="fasta">Fasta文件</el-radio-button>
+                </el-radio-group>
+                
+                <!-- File input section -->
+                <!-- 注意!!!!!!!!!!!!!!!!!!!!!:before-upload="beforeUploadFastq"这个好像是接口 -->
+                <el-upload
+                  v-if="form.inputFileType === 'fastq'"
+                  action="/login/upload/"
+                  drag
+                  multiple
+                  :auto-upload="true"
+                  :file-list="fileList"
+                  :before-upload="beforeUpload"
+                  :on-success="handleUploadSuccess"
+                  :on-change="handleFileChange"
+                  class="custom-select">
+                  <i class="el-icon-upload"></i>
+                  <div class="el-upload__text">将Fastq文件（支持多选）拖到此处，或<em>点击上传</em></div>
+                </el-upload>
+
+                <el-upload
+                  v-if="form.inputFileType === 'fasta'"
+                  action="/login/upload/"
+                  drag
+                  multiple
+                  :auto-upload="true"
+                  :file-list="fileList"
+                  :before-upload="beforeUpload"
+                  :on-success="handleUploadSuccess"
+                  :on-change="handleFileChange"
+                  class="custom-select">
+                  <i class="el-icon-upload"></i>
+                  <div class="el-upload__text">Fasta文件拖到此处，或<em>点击上传</em></div>
+                </el-upload>
               </el-form-item>
 
-              
-              
-             <el-form-item label="标题4-是否合并Fastq-单选按钮的示例" required>
+
+
+            <!-- AMRFinder 选项 -->
+             <!-- <el-form-item label="是否合并Fastq" required>
                 <el-radio-group v-model="form.mergeFastq">
                 <el-tooltip class="item" effect="dark" content="勾选后所有Fastq文件将合并分析" placement="top">
                     <el-radio label="true">是</el-radio>
                 </el-tooltip>
                 <el-radio label="false">否</el-radio>
                 </el-radio-group>
-             </el-form-item>
+             </el-form-item> -->
+            <el-form-item label="AMRFinderPlus" required>
+              <el-radio-group v-model="form.amrFinderPlus"
+              :disabled="form.seqType === 'paired-end'"> <!-- 动态禁用 -->
+              <el-tooltip 
+                class="item" 
+                effect="dark" 
+                content="激活这个参数则不会使用原有的耐药数据库进行分析" 
+                placement="top">
+                  <el-radio label="true">是</el-radio>
+              </el-tooltip>
+                  <el-radio label="false">否</el-radio>
+              </el-radio-group>
+            </el-form-item>
 
                   
              <!-- seqType表示测序类型   请选择表示无默认值时出现提示词-->
@@ -153,22 +207,47 @@
               我真没想到前端中的遍历语句居然写在字符串里面,
               然后你就可以根据form.seqType的值,来控制某些组件是否要显示
               -->
-             <el-form-item label="标题5-测序类型" required>
+              <el-form-item label="耐药数据库" required>
+                <el-select
+                   v-model="form.drType"                                    
+                   placeholder="请选择"
+                   class="custom-select">
+                   <el-option v-for="item in Drug_resistance_database_referenceOptions"
+                     :key="item.value" :label="item.label" :value="item.value"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="毒力数据库" required>
+                <el-select
+                   v-model="form.vfType"                                    
+                   placeholder="请选择"
+                   class="custom-select">
+                   <el-option v-for="item in Toxicity_database_referenceOptions"
+                     :key="item.value" :label="item.label" :value="item.value"></el-option>
+                </el-select>
+              </el-form-item>
+             <el-form-item label="测序类型" required>
                <el-select
                   v-model="form.seqType"                                    
                   placeholder="请选择"
-                  class="custom-select">
+                  class="custom-select"
+                  @change = "handDataTypeChange"
+                  :disabled="form.inputFileType === 'fasta'" >
+                  <!-- 动态禁用:当上传类型为fasta时,禁用该下拉框;-->
                   <el-option v-for="item in referenceOptions"
-                    :key="item.value" :label="item.label" :value="item.value"></el-option>
+                    :key="item.value" 
+                    :label="item.label" 
+                    :value="item.value">
+                  </el-option>
                </el-select>
              </el-form-item>
 
 
-              <el-form-item label="标题6-最小质量值(和标题2差不多,行编辑框,可自由发挥,比如说限制只能输入数字等等)" required>
+              <el-form-item label="最小质量值" required>
                 <el-input 
                     v-model="form.minQ"
                     placeholder="输入最小质量，单位未知" 
-                    class="custom-select">
+                    class="custom-select"
+                    :disabled="form.inputFileType === 'fasta'"> <!-- 动态禁用:当上传类型为fasta时,禁用该输入框 -->
                 </el-input>
               </el-form-item>
 
@@ -177,7 +256,7 @@
                第一,如下所示:标题7.1的部分使用@input="validateMinLength(form.minL)"调用函数来对输入内容进行约束
                第二,如下所示:标题7.2的部分使用使用type="number"来对内容进行约束,这样还可以多出来一个上下调节的数字的按钮
                总结,方一不好,方二very nice!!! 方一和方二都可以设置数字(包括小数and整数),方二只需要type="number"即可完成 -->
-              <!-- <el-form-item v-if="form.seqType === '三代测序'" label="标题7.1-最小长度(bp)-限制数字的示例" required>
+              <!-- <el-form-item v-if="form.seqType === '三代测序'" label="最小长度" required>
                 <el-input 
                     v-model="form.minL" 
                     placeholder="输入最小长度，单位为bp" 
@@ -187,31 +266,42 @@
               </el-form-item> -->
 
               
-              <el-form-item v-if="form.seqType === '三代测序'" label="标题7.2-最小长度(bp)-限制数字的示例" required>
+              <el-form-item v-if="form.seqType === 'nanopore-sequencing'" label="最小长度" required>
                 <el-input v-model="form.minL" type="number" class="custom-select"></el-input>
               </el-form-item>
 
               <!-- 看了上面"标题5-测序类型",我们知道vue前端是将for循环的内容放在字符串里面的,主要还是key和value,
                在前端中key是指label,也就是直接呈现在网页上的内容,value是指我们在选中之后,该模型所代表的值,
                那么这个值怎么代表呢?  答:v-model="xxxx",那么这个字符中的xxxx就是变量  -->
-              <el-form-item label="标题8-是否过滤比对结果-单选框" required>
-                <el-radio-group v-model="form.minScore0">
+              <el-form-item label="是否过滤比对结果" required>
+                <el-radio-group v-model="form.minScore0" @change="handleFilterChange">
                   <el-radio label="true">是</el-radio>
                   <el-radio label="false">否</el-radio>
                 </el-radio-group>
               </el-form-item>
               
-              <el-form-item v-if="form.minScore0 === 'true'" label="标题9-最低比对分数-LineEdit" required>
+              <el-form-item v-if="form.minScore0 === 'true'" label="最低比对分数" required>
                 <el-input v-model="form.minScore" type="number" class="custom-select"></el-input>
               </el-form-item>
               
-              <el-form-item v-if="form.minScore0 === 'true'" label="标题10-最低相似度-LineEdit" required>
+              <el-form-item v-if="form.minScore0 === 'true'" label="最低相似度" required>
                 <el-input v-model="form.minSimilarity" type="number" class="custom-select"></el-input>
               </el-form-item>
               
-              <el-form-item v-if="form.minScore0 === 'true'" label="标题11-最低置信度（e-value）" required>
+              <el-form-item v-if="form.minScore0 === 'true'" label="最低置信度（e-value）" required>
                 <el-input v-model="form.minEval" type="number" class="custom-select"></el-input>
               </el-form-item>
+
+              <!-- 不显示,但是form.mergeFastq这个参数还在传递 -->
+              <!-- <el-form-item label="是否合并Fastq" required>
+                <el-radio-group v-model="form.mergeFastq"
+                :disabled="form.seqType === 'paired-end'"> 
+                  <el-tooltip class="item" effect="dark" content="勾选后所有Fastq文件将合并分析" placement="top">
+                    <el-radio label="true">是</el-radio>
+                  </el-tooltip>
+                  <el-radio label="false">否</el-radio>
+                </el-radio-group>
+              </el-form-item> -->
               
          
             <!-- :disabled="!isFormValid || isUploading"：根据表达式的值，决定按钮是否被禁用。
@@ -246,6 +336,7 @@
         data() {//因为别的文件没有地方用到了mergeFastq,所以说我觉得这个可有可无
           return {
             form: {
+              amrFinderPlus: 'true',
               mergeFastq: 'true',
             },
           };
@@ -282,22 +373,37 @@
                   //这里面放的都是各个变量的初始值
                   form: {
                       sampleName: '',
-                      seqType: '',//seqType: '三代测序'     如果设置了默认值'三代测序',就不可以出现"请选择"这样的提示词了
-                      inputFileType: 'fastq',
-                      mergeFastq: 'false',
+                      seqType: 'paired-end',//seqType: '三代测序'     如果设置了默认值'三代测序',就不可以出现"请选择"这样的提示词了
+                      drType:'card',//默认值
+                      vfType:'setA',
+                      inputFileType: 'fastq',// 初始值
+                      amrFinderPlus: 'false',
+                      mergeFastq: 'false',// 默认值
                       inputFile: '',
                       filter: 'false',
                       minScore0: 'false',
-                      minL: '',//6    最小长度的默认值
-                      minQ: '',//100  最小质量的默认值
-                      minScore: '0',
-                      minSimilarity: '0',
-                      minEval: '0',
+                      minL: '0',//6    最小长度的默认值
+                      minQ: '0',//100  最小质量的默认值
+                      minScore: 'None',
+                      minSimilarity: 'None',
+                      minEval: 'None',
                   },
                   fileList: [],//空数字,用来存放上传的文件
                   referenceOptions: [//后面的label就是下拉框里的选项,value就是选项的值
-                      { value: '三代测序', label: '三代测序' },
-                      { value: '二代测序', label: '二代测序' }
+                      { value: 'nanopore-sequencing', label: '三代测序' },
+                      // { value: '二代测序', label: '二代测序' }
+                      { value: 'paired-end', label: '二代测序：双端' },
+                      { value: 'single-end', label: '二代测序：单端' },
+                  ],
+                  Drug_resistance_database_referenceOptions:[
+                    { value: 'card', label: 'card' },
+                    { value: 'argannot', label: 'argannot' },
+                    { value: 'plasmidfinder', label: 'plasmidfinder' },
+                    { value: 'resfinder', label: 'resfinder' },
+                  ],
+                  Toxicity_database_referenceOptions:[
+                    { value: 'setA', label: 'setA（核基因数据库）' },
+                    { value: 'setB', label: 'setB（全部基因数据库）' },
                   ],
                   BasecallModels: {//好像没什么用,删了试一试会不会有什么影响
                       models: []
@@ -318,39 +424,73 @@
                   this.form.inputFile = this.fileList.map(file => file.name).join(', ');
                   this.isUploading = false;
               },
-              beforeUploadFastq(file) {
-                  const isFastq = file.name.endsWith('.fastq');
-                  if (!isFastq) {
-                      this.$message({ message: '只能上传以 .fastq 结尾的文件', type: 'error', duration: 1000 });
-                  }
-                  this.isUploading = true;
-                  return isFastq;
+              beforeUpload(file) {
+                const isFastqOrFasta = file.name.endsWith('.fastq') || file.name.endsWith('.fq') || file.name.endsWith('.gz') || file.name.endsWith('.fasta') || file.name.endsWith('.fa');
+                if (!isFastqOrFasta) {
+                  this.$message({ message: '只能上传Fastq或Fasta格式的文件', type: 'error', duration: 500 });
+                }
+                this.isUploading = true; // 上传开始，禁用“确定”按钮
+                return isFastqOrFasta;
               },
               resetForm() {
                   this.form = {
                       sampleName: '',
-                      seqType: '三代测序',
+                      seqType: 'nanopore-sequencing',
                       inputFileType: 'fastq',
+                      amrFinderPlus:  'false',
                       mergeFastq: 'false',
                       inputFile: '',
                       filter: 'false',
                       minScore0: 'false',
-                      minL: '6',
-                      minQ: '100',
-                      minScore: '0',
-                      minSimilarity: '0',
-                      minEval: '0',
+                      minL: '0',//'6',
+                      minQ: '0',//'100',
+                      minScore: 'None',
+                      minSimilarity: 'None',
+                      minEval: 'None',
                   };
                   this.fileList = [];
                   this.fetchBasecallModel();
                   this.updateDefaults(); // 更新默认值
               },
               handleFileTypeChange(value) {
+                  // this.form.inputFile = '';
+                  // this.fileList = [];
+
                   if (value === 'pod5' || value === 'fastq') {
                       this.form.inputFile = '';
                       this.fileList = [];
+                      this.form.seqType = 'paired-end';
                       this.isUploading = false;
                   }
+                  // 如果切换到 Fasta 类型，可以清空 seqType（可选）
+                  if (this.form.inputFileType === 'fasta') {
+                    this.form.seqType = 'fasta';
+                    this.form.minL = '0';//最小长度
+                    this.form.minQ = '0';//最小质量数
+                  }
+                  
+                  // 如果选中的是 'fasta'，设置 amrFinderPlus 为 'true'
+                  if (this.form.inputFileType === 'fasta') {
+                    this.form.amrFinderPlus = 'true';
+                  }else if (this.form.inputFileType === 'fastq'){
+                    this.form.amrFinderPlus = 'false';
+                  }
+              },
+              handDataTypeChange(value){
+                  //如果是双端,AMRFinderPlus,是否合并Fastq均为否
+                  if(value === 'paired-end'){
+                    this.form.amrFinderPlus = 'false';
+                    this.form.mergeFastq = 'false';
+                  }
+              },
+              handleFilterChange(value) {
+                if (value === "false") {
+                  // 设置为 None，当选择 "否"
+                  //'minScore': 'None', 'minSimilarity': 'None', 'minEval': 'None'
+                  this.form.minScore = "None";
+                  this.form.minSimilarity = "None";
+                  this.form.minEval = "None";
+                }
               },
               handleFileChange(file, fileList) {
                   this.fileList = fileList;
@@ -369,16 +509,26 @@
                   //至此,检查到输入格式没问题
 
                   if (this.isFormValid) {
-                      const apiEndpoint = '/login/api/mapping/';///////////////提交任务接口：/login/api/mapping/
+                      const apiEndpoint = '/login/api/submit_drugvir/';///////////////提交任务接口：/login/api/mapping/
                       axios.post(apiEndpoint, {
                           sampleName: this.form.sampleName,
-                          seqType: this.form.seqType,
-                          inputFile: this.form.inputFile,
-                          minL: this.form.minL,
-                          minQ: this.form.minQ,
-                          minScore: this.form.minScore,
-                          minSimilarity: this.form.minSimilarity,
-                          minEval: this.form.minEval,
+                          input_file: this.form.inputFile,
+                          alignmentscore: this.form.minScore,
+                          similarity: this.form.minSimilarity,
+                          e_value:  this.form.minEval,
+                          qual: this.form.minQ,
+                          length: this.form.minL,
+                          sequencing: this.form.seqType,//测序类型
+                          drugresist_db:  this.form.drType,//耐药数据库
+                          virfactor_db_set: this.form.vfType,//毒力数据库
+                          amrfinder_plus: this.form.amrFinderPlus,
+                          // seqType: this.form.seqType,
+                          // inputFile: this.form.inputFile,
+                          // minL: this.form.minL,
+                          // minQ: this.form.minQ,
+                          // minScore: this.form.minScore,
+                          // minSimilarity: this.form.minSimilarity,
+                          // minEval: this.form.minEval,
                           mergeFastq:this.form.mergeFastq,
                       }, {
                           headers: { 'X-CSRFToken': this.getCookie('csrftoken') }
@@ -465,10 +615,13 @@
                   return cookieValue;
               },
               updateDefaults() {
-                  if (this.form.seqType === '三代测序') {
+                  if (this.form.seqType === 'nanopore-sequencing') {
                       this.form.minQ = '6'; 
                       this.form.minL = '100'; 
-                  } else if (this.form.seqType === '二代测序') {
+                  } else if (this.form.seqType === 'paired-end') {// else if (this.form.seqType === '二代测序') {
+                      this.form.minQ = '20';  
+                      this.form.minL = '0';  
+                  }else if (this.form.seqType === 'single-end') {
                       this.form.minQ = '20';  
                       this.form.minL = '0';  
                   }
@@ -478,9 +631,9 @@
                       this.form.minSimilarity = '90'; 
                       this.form.minEval = '0.00001'; 
                   } else {
-                      this.form.minScore = '0';
-                      this.form.minSimilarity = '0'; 
-                      this.form.minEval = '0'; 
+                      this.form.minScore = 'None';
+                      this.form.minSimilarity = 'None'; 
+                      this.form.minEval = 'None'; 
                   }
               }
           },

@@ -52,7 +52,7 @@ def handle_auroch_input(input, outdir, log):
         if input.endswith('zip'):
             log.logger.info(f"开始解压并合并Zip文件")
             extract_pod5(f'{DATADIR}/{input}', outdir, log)
-        elif input.endswith('pod5') :
+        elif input.endswith('pod5'):
             shutil.move(os.path.join(DATADIR, input), outdir)
         elif input.endswith('fastq'):
             shutil.move(os.path.join(DATADIR, input), outdir)

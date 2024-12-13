@@ -10,7 +10,7 @@ from django.core.files.storage import FileSystemStorage
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import *
-from .tasks import execute_auroch,execute_pod5_plotter,execute_covid,execute_mapping
+from .tasks import execute_auroch, execute_pod5_plotter, execute_covid, execute_mapping, execute_sewage, execute_drugvir 
 from .serializers import JobUniversalSerializer
 import re
 import logging
@@ -149,15 +149,19 @@ def empty(request):
     return render(request, 'tasks/empty.html')
 
 # 新增加
-def test(request):
-    return render(request, 'tasks/test.html')
-# 新增加
 def test1(request):
     return render(request, 'tasks/test1.html')
 
 # 新增加
+def test2(request):
+    return render(request, 'tasks/test2.html')
+
+# 新增加
 def submit_sewage_water(request):
     return render(request, 'tasks/submit_sewage_water.html')
+# 新增加
+def Endurance_toxicity_analysis(request):
+    return render(request, 'tasks/Endurance_toxicity_analysis.html')
     
 def read_log(request, pk):
     
@@ -471,7 +475,130 @@ class CreateJob_Mapping(generics.ListCreateAPIView):
         headers = self.get_success_headers(serializer.data)
         print(headers)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
+    
+class CreateJob_Sewage(generics.ListCreateAPIView):
+    queryset = JobUniversal.objects.all()
+    serializer_class = JobUniversalSerializer
 
+    def get_full_path(self, jobArgs, filenames):
+        paths = [os.path.join(jobArgs['data'],FileName.strip())
+        for FileName in filenames.split(',')]
+        return(paths)
+    
+    def create(self, request):
+        jobArgs = {}
+        jobArgs['workdir'] = WORKDIR  # 设定workdir目录路径
+        jobArgs['data'] = DATADIR  # 设定data目录路径
+        jobArgs['jobName'] = '污水分析流程'
+        jobArgs['projectName'] = 'Test'
+        jobArgs['userName'] = 'TestUser'
+        sampleName = request.data.get('sampleName')
+        print(f'idw为{request.data.get('mergeFastq')}')
+        # 构建json参数
+        json_param = json.dumps({'inputFile': self.get_full_path(jobArgs, request.data.get('inputFile')),
+                                'seqType':request.data.get('seqType'),
+                                'mergeFastq':request.data.get('mergeFastq'),
+                                'minQ':request.data.get('minQ'),
+                                'minL':request.data.get('minL'),
+                                'minScore':request.data.get('minScore'),
+                                'minSimilarity':request.data.get('minSimilarity'),
+                                'minEval':request.data.get('minEval')
+                                 })
+        try:
+            if JobUniversal.objects.filter(sampleName=sampleName).exists():
+                random_suffix = generate_random_string()
+                sampleName = f"{sampleName}_{random_suffix}"
+            data = {
+                'sampleName': sampleName,
+                'workfolw': jobArgs['jobName'],
+                'workDir': os.path.join(jobArgs['workdir'], sampleName),
+                'projectName': jobArgs['projectName'],
+                'userName': jobArgs['userName'],
+                'parameters': json_param,
+                'status': 'queued',
+                'log': os.path.join(jobArgs['workdir'], sampleName, 'log'),
+            }
+            # 创建模型实例
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            id = serializer.instance.id
+            print(f'idw为{id}')
+            result = execute_sewage.delay(id)
+        except Exception as err:
+            print(f'任务创建失败:{err}')
+                    
+        headers = self.get_success_headers(serializer.data)
+        print(headers)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
+    
+    
+    
+class CreateJob_DrugVir(generics.ListCreateAPIView):
+    queryset = JobUniversal.objects.all()
+    serializer_class = JobUniversalSerializer
+
+    def get_full_path(self, jobArgs, filenames):
+        try:
+            paths = [os.path.join(jobArgs['data'],FileName.strip())
+            for FileName in filenames.split(',')]
+        except Exception:
+            print(f'任务创建失败:样本名有误')
+        return(paths)
+    
+    def create(self, request):
+        jobArgs = {}
+        jobArgs['workdir'] = WORKDIR  # 设定workdir目录路径
+        jobArgs['data'] = DATADIR  # 设定data目录路径
+        jobArgs['jobName'] = '耐药毒力分析'
+        jobArgs['projectName'] = 'Test'
+        jobArgs['userName'] = 'TestUser'
+        sampleName = request.data.get('sampleName')
+        # 构建json参数
+        json_param = json.dumps({'input_file': self.get_full_path(jobArgs, request.data.get('input_file')),
+                        'alignmentscore': request.data.get('alignmentscore'),
+                        'similarity': request.data.get('similarity'),
+                        'e_value': request.data.get('e_value'),
+                        'qual': request.data.get('qual'),
+                        'length': request.data.get('length'),
+                        'sequencing': request.data.get('sequencing'),
+                        'drugresist_db': request.data.get('drugresist_db'),
+                        'virfactor_db_set': request.data.get('virfactor_db_set'),
+                        'amrfinder_plus': request.data.get('amrfinder_plus'),
+                        'mergeFastq': request.data.get('mergeFastq')
+                                 })
+        try:
+            if JobUniversal.objects.filter(sampleName=sampleName).exists():
+                random_suffix = generate_random_string()
+                sampleName = f"{sampleName}_{random_suffix}"
+            data = {
+                'sampleName': sampleName,
+                'workfolw': jobArgs['jobName'],
+                'workDir': os.path.join(jobArgs['workdir'], sampleName),
+                'projectName': jobArgs['projectName'],
+                'userName': jobArgs['userName'],
+                'parameters': json_param,
+                'status': 'queued',
+                'log': os.path.join(jobArgs['workdir'], sampleName, 'log'),
+            }
+            # 创建模型实例
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            id = serializer.instance.id
+            print(f'idw为{id}')
+            result = execute_drugvir.delay(id)
+        except Exception as err:
+            print(f'任务创建失败:{err}')
+                    
+        headers = self.get_success_headers(serializer.data)
+        print(headers)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
+    
+    
 class JobUniversalRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     queryset = JobUniversal.objects.all()
     serializer_class = JobUniversalSerializer
@@ -522,6 +649,8 @@ def serve_html(request, pk):
         reportPath = os.path.join(job.workDir,'Covid_Report.html')
     if job.workfolw=='病原比对流程':
         reportPath = os.path.join(job.workDir,'Mapping_Report.html')
+    if job.workfolw=='耐药毒力分析':
+        reportPath = os.path.join(job.workDir,'Drugvir_report.html')
         
     try:
         with open(reportPath, 'r') as file:
@@ -541,7 +670,7 @@ def download_zip(request, pk):
         reportDirPath = os.path.join(job.workDir, f'result_{job.sampleName}')
         zip_file_path = os.path.join(job.workDir, f'result_{job.sampleName}.zip')
     
-    elif job.workfolw in ['Covid19','病原比对流程']:
+    elif job.workfolw in ['Covid19','病原比对流程','污水分析流程','耐药毒力分析']:
         reportDirPath = os.path.join(job.workDir, f'result/10.Report/')
         zip_file_path = os.path.join(job.workDir, f'result_{job.sampleName}.zip')
         

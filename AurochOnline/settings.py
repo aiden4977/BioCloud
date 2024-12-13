@@ -158,15 +158,17 @@ SIMPLEUI_CONFIG = {
             'name': '新冠全基因组分析',
             'url': '/login/submit_covid/'
         },{
-            'name': '致病菌分析',
-            'url': '/login/empty/'
-        },
-        {
             'name': '新冠污水分析',
             'url': '/login/submit_sewage_water/'
         },{
             'name': '广谱病原微生物分析',
             'url': '/login/submit_mapping/'
+        },{
+            'name': '致病菌耐药毒力分析',
+            'url': '/login/Endurance_toxicity_analysis/'
+        },{
+            'name': 'To do',
+            'url': '/login/test2/'
         },
         {
             'name': '测试页面',
@@ -218,12 +220,16 @@ PYTHON_BIN = '/home/nanopore/02.Software/mc.3/envs/python312/bin/python'
 PY38_PYTHON = '/home/nanopore/02.Software/mc.3/envs/py38/bin/python'
 #Relative Path
 MAINDIR = f'{DIR}/'
-DATADIR = f'{DIR}/DATADIR/'
-WORKDIR = f'{DIR}/WORKDIR/'
+#DATADIR = f'{DIR}/DATADIR/'
+#WORKDIR = f'{DIR}/WORKDIR/'
+DATADIR = '/data/01.NAS/test/DATADIR/'
+WORKDIR = '/data/01.NAS/test/WORKDIR/'
 SCRIPTDIR = f'{DIR}/SCRIPT/'
 POD5_PLOTER_PATH = f'{SCRIPTDIR}/pod5_plotter/pod5_ploter_report.py'
 COVID19_PATH = f'{SCRIPTDIR}/covid/Covid19/bin/Covid19_pipline.py'
 META_GENOMIC_PATH = f'{SCRIPTDIR}/meta/Meta_genomics/bin/Meta_pipline.py'
+SEWAGE_PATH = f'{SCRIPTDIR}/sewage/Sewage_analysis/bin/Sewage_pipline.py'
+DRUGVIR_PATH = f'{SCRIPTDIR}/drugvir/Drugresist_virfactor/bin/Drugvir_pipline.py'
 HANDLE_LOG_PATH = f'{SCRIPTDIR}/handle_log/handle_log.py'
 AUROCH_TEST_INFO_PATH=f'{SCRIPTDIR}/auroch/auroch_v0.6/lib/testInfo.txt'
 AUROCH_BIN_PATH=f'{SCRIPTDIR}/auroch/auroch_v0.6/auroch_v0.6.sh'
@@ -238,3 +244,4 @@ AUROCH_REF_DICT={'Covid':f'{SCRIPTDIR}/auroch/ref/covid-19.fasta',
 AUROCH_MODEL_DICT={'20240821.5':'MeMob新冠模型',
                    '20240930.2':'MeMob通用模型',}
 
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'None'

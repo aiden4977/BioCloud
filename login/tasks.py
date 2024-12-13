@@ -8,7 +8,7 @@ import numpy as np
 from celery import shared_task
 from .logger import LoggerTest
 from .utils import generate_random_string
-from .task_utils.mapping import handle_mapping_input, handle_input_list
+from .task_utils.mapping import handle_mapping_input, handle_input_list, handle_drug_paired_input
 from .task_utils.auroch import handle_auroch_input, extract_pod5, write_config
 from .task_utils.pod5_ploter import handle_pod5ploter_input
 from AurochOnline.settings import POD5_BIN_PATH, PYTHON_BIN, DATADIR, POD5_PLOTER_PATH
@@ -39,6 +39,7 @@ def execute_auroch(id):
     
     try:
         #mkdir
+        resubmit = os.path.exists(work_input_dir)
         os.makedirs(work_dir, exist_ok=True)
         os.makedirs(work_input_dir, exist_ok=True)
         print(f"Directory {work_dir} created.",parameters)
@@ -47,9 +48,10 @@ def execute_auroch(id):
         #handle pod5
         log.logger.info(f'正在准备输入文件{work_dir}')
         log.logger.info(f'{parameters},{type(parameters)}')
-        parameters['inputFile'] = handle_auroch_input(input = parameters['inputFile'], 
-                                               outdir = work_input_dir,
-                                               log = log)
+        if not resubmit:
+            parameters['inputFile'] = handle_auroch_input(input = parameters['inputFile'], 
+                                                outdir = work_input_dir,
+                                                log = log)
                 
         #write in config
         log.logger.info(f'正在设置运行参数')
@@ -203,7 +205,7 @@ def execute_covid(id):
         f.close()
         
         length_type = 'complete' if fullLen == 'true' else 'part'
-        is_fasta = '' if inputFile[0].endswith('fastq') else '-f'
+        is_fasta = '' if inputFile[0].endswith(('fastq', 'fq', 'fastq.gz', 'fq.gz')) else '-f'
         input_command = f'{workDir}/result/ -b --type {length_type} {is_fasta} -q {minQ} -l {minL}'
         
         #run
@@ -230,9 +232,6 @@ def execute_covid(id):
         job.status = 'failed'
 
     job.save()
-    
-
-import os
 
 @shared_task
 def mkdir(id):
@@ -254,21 +253,13 @@ def execute_mapping(id):
     work_input_dir = f'{work_dir}/input/'
     work_result_dir = f'{work_dir}/result/'
     parameters = ast.literal_eval(job.parameters)
-    # 'inputFile': self.get_full_path(jobArgs, request.data.get('fastqFile')),
-    # 'seqType':request.data.get('seqType'),
-    # 'mergeFastq':request.data.get('mergeFastq'),
-    # 'minQ':request.data.get('minQ'),
-    # 'minL':request.data.get('minL'),
-    # 'minScore':request.data.get('minScore'),
-    # 'minSimilarity':request.data.get('minSimilarity'),
-    # 'minEval':request.data.get('minEval')
     try:
         #mkdir
         os.makedirs(work_dir, exist_ok=True)
         os.makedirs(work_input_dir, exist_ok=True)
         os.makedirs(work_result_dir, exist_ok=True)
         print(f"Directory {work_dir} created.",parameters)
-        log = LoggerTest('Mapping',f'{work_dir}/log')
+        log = LoggerTest('Meta',f'{work_dir}/log')
         
         #handle input
         log.logger.info(f'正在准备输入文件')
@@ -280,7 +271,7 @@ def execute_mapping(id):
         #write file list
         log.logger.info(f'准备文件清单')
         handle_input_list(fastq_dir = work_input_dir,
-                          file_path = f'{work_result_dir}/info.txt')
+                          file_path = f'{work_result_dir}/info.txt', log = log)
         
         
         input_command = f'{work_result_dir} -b -q {parameters['minQ']} -l {parameters['minL']} -a {parameters['minScore']} -s {parameters['minSimilarity']} -e {parameters['minEval']} -c 10'
@@ -292,13 +283,10 @@ def execute_mapping(id):
                                 cwd=work_dir, 
                                 capture_output=True, 
                                 text=True)
-        
         #update status
-        #report_zip = f'{work_dir}/result/10.Report/Meta_report.zip'
         if result.returncode == 0:
-            #shutil.copy(report_zip, f'{work_dir}/Meta_report.zip')
             job.status = 'success'
-            log.logger.info(f'病原比对运行完成')
+            log.logger.info(f'病原运行完成')
         else:
             job.status = 'failed'
             log.logger.info(f'病原比对失败\n{result.stderr}')
@@ -306,6 +294,139 @@ def execute_mapping(id):
     except Exception as e:
         log.logger.error(traceback.format_exc())
         log.logger.error(f'病原比对已停止:{e}')
+        job.status = 'failed'
+
+    job.save()
+    
+@shared_task
+def execute_sewage(id):
+    from AurochOnline.settings import PYTHON_BIN, SEWAGE_PATH
+    import ast
+    job = JobUniversal.objects.get(id=id)
+    print(f'接收到{id}')
+    job.status = 'running'
+    job.save()
+
+    work_dir = job.workDir
+    work_input_dir = f'{work_dir}/input/'
+    work_result_dir = f'{work_dir}/result/'
+    parameters = ast.literal_eval(job.parameters)
+
+    try:
+        #mkdir
+        os.makedirs(work_dir, exist_ok=True)
+        os.makedirs(work_input_dir, exist_ok=True)
+        os.makedirs(work_result_dir, exist_ok=True)
+        print(f"Directory {work_dir} created.",parameters)
+        log = LoggerTest('Sewage',f'{work_dir}/log')
+        
+        #handle input
+        log.logger.info(f'正在准备输入文件')
+        log.logger.info(f'{parameters},{type(parameters)},{bool(parameters['mergeFastq'])}')
+        handle_mapping_input(input = parameters['inputFile'], 
+                                outdir = work_input_dir,
+                                merge = parameters['mergeFastq'],
+                                log = log)
+        #write file list
+        log.logger.info(f'准备文件清单')
+        handle_input_list(fastq_dir = work_input_dir,
+                          file_path = f'{work_result_dir}/info.txt', log = log)
+        
+        
+        input_command = f'{work_result_dir} -b -q {parameters['minQ']} -l {parameters['minL']} -a {parameters['minScore']} -s {parameters['minSimilarity']} -e {parameters['minEval']} -c 10'
+        #run
+        log.logger.info(f'开始新冠污水比对流程')
+        print(f'{PYTHON_BIN} {SEWAGE_PATH} {input_command}>>log 2>>log')
+        result = subprocess.run([f'{PYTHON_BIN} {SEWAGE_PATH} {input_command} >>log 2>>log'], 
+                                shell=True,
+                                cwd=work_dir, 
+                                capture_output=True, 
+                                text=True)
+        
+        #update status
+        if result.returncode == 0:
+            job.status = 'success'
+            log.logger.info(f'新冠污水运行完成')
+        else:
+            job.status = 'failed'
+            log.logger.info(f'新冠污水比对失败\n{result.stderr}')
+            
+    except Exception as e:
+        log.logger.error(traceback.format_exc())
+        log.logger.error(f'新冠污水比对已停止:{e}')
+        job.status = 'failed'
+
+    job.save()
+
+@shared_task
+def execute_drugvir(id):
+    from AurochOnline.settings import PYTHON_BIN, DRUGVIR_PATH
+    import ast
+    job = JobUniversal.objects.get(id=id)
+    print(f'接收到{id}')
+    job.status = 'running'
+    job.save()
+
+    work_dir = job.workDir
+    work_input_dir = f'{work_dir}/input/'
+    work_result_dir = f'{work_dir}/result/'
+    parameters = ast.literal_eval(job.parameters)
+
+    try:
+        #mkdir
+        os.makedirs(work_dir, exist_ok=True)
+        os.makedirs(work_input_dir, exist_ok=True)
+        os.makedirs(work_result_dir, exist_ok=True)
+        print(f"Directory {work_dir} created.",parameters)
+        log = LoggerTest('Drugvir',f'{work_dir}/log')
+        
+        #handle input
+        log.logger.info(f'正在准备输入文件')
+        log.logger.info(f'{parameters},{type(parameters)},{bool(parameters['mergeFastq'])}')
+
+        if parameters['sequencing'] == 'paired-end':
+            handle_drug_paired_input(parameters = parameters,
+                                     file_path = f'{work_result_dir}/info.txt',
+                                     log = log)
+
+
+        else:
+            handle_mapping_input(input = parameters['input_file'], 
+                                outdir = work_input_dir,
+                                merge = parameters['mergeFastq'],
+                                log = log)
+        #write file list
+            log.logger.info(f'准备文件清单')
+            handle_input_list(fastq_dir = work_input_dir,
+                            file_path = f'{work_result_dir}/info.txt', log = log)
+        
+        amrfinder_plus = '-p' if f'{parameters['amrfinder_plus']}' == 'true' else ''
+
+        input_command = f'{work_result_dir} -b -q {parameters['qual']} -l {parameters['length']} -a {parameters['alignmentscore']} -s {parameters['similarity']} -e {parameters['e_value']} -seq {parameters['sequencing']} -dr {parameters['drugresist_db']} -vf {parameters['virfactor_db_set']} {amrfinder_plus}'
+        #run
+        log.logger.info(f'开始致病菌耐药毒力比对流程')
+        print(f'{PYTHON_BIN} {DRUGVIR_PATH} {input_command}>>log 2>>log')
+        result = subprocess.run([f'{PYTHON_BIN} {DRUGVIR_PATH} {input_command} >>log 2>>log'], 
+                                shell=True,
+                                cwd=work_dir, 
+                                capture_output=True, 
+                                text=True)
+
+        #update status
+        report_path = f'{work_dir}/result/10.Report/Drugvir_report.html'
+        if result.returncode == 0 and os.path.exists(report_path):
+            shutil.copy(report_path, f'{work_dir}/Drugvir_report.html')
+            job.status = 'success'
+            print('job.status = success')
+        else:
+            job.status = 'failed'
+            print('job.status = failed')
+            print(f"\nError: {result.stderr}")
+
+
+    except Exception as e:
+        log.logger.error(traceback.format_exc())
+        log.logger.error(f'致病菌耐药毒力比对已停止:{e}')
         job.status = 'failed'
 
     job.save()

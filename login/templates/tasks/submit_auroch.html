@@ -6,6 +6,7 @@
     <title>Submit Task</title>
     <link rel="stylesheet" href="/static/css/index.css">
     <link rel="stylesheet" href="/static/js/unpkg_index.css">
+    <link rel="stylesheet" href="/static/tasks/analyse.css">
     <style>
       body.hidden {
         display: none;
@@ -20,7 +21,7 @@
         color: #333;
       }
 
-      .form-container {
+      /* .form-container {
         background-color: #fff;
         border: 2px solid #ffffff;
         border-radius: 10px;
@@ -30,7 +31,7 @@
       }
       .form-container .el-form-item {
         margin-bottom: 30px;
-      }
+      } */
       .dialog-footer {
         text-align: -webkit-center;
         margin-top: 20px;
@@ -93,7 +94,7 @@
         <el-main>
           <div class="form-container">
             <el-form ref="form" :model="form" label-width="120px">
-              <h3>提交任务</h3>
+              <h3 class="covid-analysis">Auroch分析</h3>
               <p></p>
               <div class="custom-divider"></div>
               <el-form-item label="样本名称" required>

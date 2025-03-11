@@ -1,0 +1,79 @@
+.covid-analysis {
+    font-size: 20px;        /* 设置字体大小 */
+    /*color: #2c3e50;        /* 深蓝色字体 */
+    /*text-align: center;    /* 居中对齐 */
+    /*background-color: #ecf0f1; /* 设置背景颜色 */
+    /*padding: 10px 20px;    /* 内边距 */
+    /*border-radius: 10px;   /* 圆角边框 */
+    /*box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2); /* 添加阴影 */
+    /*font-family: Arial, sans-serif; /* 设置字体 */
+    /*text-transform: uppercase; /* 将文字转换为大写 */
+    font-family: 'Microsoft YaHei', '微软雅黑', 'Arial', monospace;
+    font-weight: normal;
+}
+
+/* .el-upload-list.el-upload-list--text {
+  display: none; /* 隐藏整个区域 */
+/* } */ 
+
+.form-container {
+    /* background-color: #fff; */
+    background-color: rgba(255, 255, 255);
+    position: relative;
+
+    border: 2px solid #ffffff;
+    border-radius: 10px;
+    padding: 30px;
+    margin: 1px auto;
+    /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
+  }
+  .form-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* background: url('https://www.moleculardevices.com.cn/media_121c89801ab5cfefef6b1940e22d67a7209396c23.png?width=2000&format=webply&optimize=medium') no-repeat center center; */
+    background-size: cover;
+    opacity: 1; 
+    z-index: -1; 
+  }
+  /* .form-container {
+    position: relative;
+    background-color: rgba(255, 255, 255, 0.5); 
+    border: 2px solid #ffffff;
+    border-radius: 10px;
+    padding: 30px;
+    margin: 1px auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .form-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('https://www.moleculardevices.com.cn/media_121c89801ab5cfefef6b1940e22d67a7209396c23.png?width=2000&format=webply&optimize=medium') no-repeat center center;
+    background-size: cover;
+    opacity: 0.5; 
+    z-index: -1; 
+  } */
+  /* .form-container .el-form-item {
+    margin-bottom: 30px;
+  } */
+  .form-container .el-form-item {
+    margin-bottom: 30px;
+  }
+  
+  .form-container .el-form-item .el-form-item__label {
+    font-size: 16px;
+    /* font-weight: 600; */
+    color: #333; /* 让标签颜色更加突出 */
+    padding-right: 10px; /* 标签与输入框之间有间隔 */
+    min-width: 120px; /* 设置标签的最小宽度，避免它们跳动 */
+    font-family: 'Microsoft YaHei', '微软雅黑', 'Arial', monospace;
+    /* font-family: 'Source Han Serif', '思源宋体', 'KaiTi', '楷体', 'Microsoft YaHei', '微软雅黑', monospace; */
+  }

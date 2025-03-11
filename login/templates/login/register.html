@@ -1,0 +1,135 @@
+<html lang="zh-CN">
+{% load static %}
+<head>
+    <meta charset="utf-8">
+    <link rel="icon" type="image/png" sizes="144x144" href="{% static 'img/logo.svg' %}"/>
+    <title>登录</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="{% static  'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <meta name="theme-color" content="#7952b3">
+
+
+    <style>
+        .bd-placeholder-img {
+            font-size: 1.125rem;
+            text-anchor: middle;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+
+        @media (min-width: 768px) {
+            .bd-placeholder-img-lg {
+                font-size: 3.5rem;
+            }
+        }
+
+        .b-example-divider {
+            height: 3rem;
+            background-color: rgba(0, 0, 0, .1);
+            border: solid rgba(0, 0, 0, .15);
+            border-width: 1px 0;
+            box-shadow: inset 0 .5em 1.5em rgba(0, 0, 0, .1), inset 0 .125em .5em rgba(0, 0, 0, .15);
+        }
+
+        .b-example-vr {
+            flex-shrink: 0;
+            width: 1.5rem;
+            height: 100vh;
+        }
+
+        .bi {
+            vertical-align: -.125em;
+            fill: currentColor;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            padding-top: 40px;
+            padding-bottom: 40px;
+            background-color: #f5f5f5;
+        }
+
+        .form-signin {
+            width: 100%;
+            max-width: 400px;
+            padding: 15px;
+            margin: auto;
+        }
+
+        .form-signin .checkbox {
+            font-weight: 400;
+        }
+
+        .form-signin .form-floating:focus-within {
+            z-index: 2;
+        }
+
+        .form-signin input[type="email"] {
+            margin-bottom: -1px;
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+
+    </style>
+</head>
+<body class="text-center">
+
+<main class="form-signin">
+    <form method="post" action="{% url 'register' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <img class="mb-4" src="{% static 'img/logo.svg' %}" alt="" width="72" height="72">
+        <h1 class="h3 mb-3 fw-normal">用户注册</h1>
+
+        <div class="form text-start">
+            <p class="text-center text-danger h4">{{ msg }}</p>
+            <label for="floatingInput">用户名</label>
+            <input required type="text" name="name" class="form-control" placeholder="用户名">
+
+        </div>
+        <div class="form mt-2 text-start">
+            <label for="">密码</label>
+            <input required type="password" name="password" class="form-control" placeholder="请输入密码">
+
+        </div>
+        <div class="form mt-2 text-start">
+            <label for="floatingFile">用户图片</label>
+            <input required id="floatingFile" type="file" name="photo" class="form-control">
+        </div>
+        <div class="form text-start mt-2">
+            <label for="floatingFile">手机号</label>
+            <input required id="floatingFile" type="text" name="phone" class="form-control" placeholder="请输入手机号">
+        </div>
+        <div class="form text-start mt-2">
+            <label for="floatingFile">邮箱</label>
+            <input required id="floatingFile" type="email" name="email" class="form-control" placeholder="请输入邮箱">
+        </div>
+
+
+        <div class="checkbox mb-3 mt-2 text-start">
+            <label>
+                <input type="checkbox" value="remember-me"> 记住我
+            </label>
+        </div>
+        <button class="w-100 btn btn-lg btn-primary" type="submit">注册</button>
+
+        <p class="mt-5 mb-3 text-muted">© 1962-2022</p>
+    </form>
+</main>
+
+<script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<div class="xl-chrome-ext-bar" id="xl_chrome_ext_{4DB361DE-01F7-4376-B494-639E489D19ED}" style="display: none;">
+    <div class="xl-chrome-ext-bar__logo"></div>
+
+    <a id="xl_chrome_ext_download" href="javascript:;" class="xl-chrome-ext-bar__option">下载视频</a>
+    <a id="xl_chrome_ext_close" href="javascript:;" class="xl-chrome-ext-bar__close"></a>
+</div>
+</body>
+</html>

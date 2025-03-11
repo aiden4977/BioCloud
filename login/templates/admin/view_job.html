@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Tasks</title>
+  <link rel="stylesheet" href="/static/css/index.css">
+  <style>
+     body.hidden {
+      display: none;
+    }
+    h1 {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .header-button {
+      display: flex;
+      align-items: center;
+      margin: 10px 20px;
+    }
+    .el-table__header {
+      width: 100%!important;
+    }
+    .el-table__empty-block {
+      width: 100%!important;
+    }
+    .el-table__body {
+      width: 100%!important;
+    }
+    .dialog-content {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .celll {
+      height: 100%;
+      padding: 0 12px;
+      line-height: 0px;
+      background-color: #ecf5ff;
+      border-color: #d9ecff;
+      font-size: 12px;
+      color: #409EFF;
+      border-width: 1px;
+      border-style: solid;
+      border-radius: 4px;
+      box-sizing: border-box;
+      white-space: nowrap;
+    }
+    body {
+      background-color: #f1f1f1;
+      font-family: Arial, sans-serif;
+    }
+    .form-container {
+      background-color: #fff;
+      border: 2px solid #ffffff;
+      border-radius: 10px;
+      padding: 30px;
+      margin: 20px auto;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body class="hidden">
+  <div id="app" style="padding: 20px;">
+    <div style="background-color: #ffffff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); border-radius: 10px;">
+      <el-container>
+        <el-main>
+          <div class="header-button">
+            <el-input v-model="search" placeholder="搜索样本" style="margin-right: 10px; width: 10%;"></el-input>
+            <el-button type="danger" @click="confirmDeleteSelectedSamples" :disabled="multipleSelection.length === 0">删除</el-button>
+            <el-button type="primary" @click="refreshTableData" style="margin-left: 10px;">刷新</el-button>
+          </div>
+
+          <el-table :data="filteredData" style="width: 100%; margin-top: 20px;" @selection-change="handleSelectionChange"
+            :default-sort="{ prop: 'created_at', order: 'descending' }">
+            <el-table-column type="selection" width="30"></el-table-column>
+            
+            <el-table-column prop="id" label="项目ID" width="90"></el-table-column>
+            <!-- <el-table-column prop="projectName" label="项目ID" width="90"></el-table-column> -->
+            
+            <el-table-column prop="workfolw" label="workflow" width="90"></el-table-column>
+            <el-table-column prop="sampleName" label="样本名称" width="150"></el-table-column>
+            <el-table-column prop="created_at" label="创建时间" width="150" :formatter="formatDate" sortable></el-table-column>
+            <el-table-column prop="status" label="任务状态" width="90">
+              <template v-slot="{ row }">
+                <el-tag :type="getStatusTagType(row.status)">
+                  <span v-html=row.status>{{ row.status }}</span>
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="180">
+              <template slot-scope="scope">
+                <el-button type="text" size="small" @click="showDetails(scope.row)">详情</el-button>
+                
+          
+                <el-button 
+                v-if="scope.row.status === 'success' && scope.row.workfolw !== 'Pod5Plotter' && scope.row.workfolw !== '病原比对流程' && scope.row.workfolw !== '污水分析流程'"
+                type="text" 
+                size="small" 
+                @click="viewFile(scope.row)">
+                查看报告
+              </el-button>
+
+                <el-button 
+                  v-if="scope.row.status === 'success'" 
+                  type="text" 
+                  size="small" 
+                  @click="downloadFile(scope.row)">下载</el-button>
+
+                <el-button 
+                v-if="scope.row.status === 'success' && scope.row.workfolw === 'Auroch'"
+                type="text" 
+                size="small" 
+                @click="downloadFastq(scope.row)">Fastq</el-button>
+
+              </template>
+            </el-table-column>
+            
+          </el-table>
+        </el-main>
+      </el-container>
+    </div>
+  </div>
+
+  <script src="/static/js/vue.js"></script>
+  <script src="/static/js/index.js"></script>
+  <script src="/static/js/axios.min.js"></script>
+  <script>
+
+      window.addEventListener('load', function() {
+        document.body.classList.remove('hidden');
+        console.log('所有资源已加载，页面显示');
+      });
+    new Vue({
+      el: '#app',
+      data() {
+        return {
+          tableData: [],
+          multipleSelection: [],
+          search: '',
+          dialogVisible: false,
+          currentSample: null,
+        };
+      },
+      computed: {
+        filteredData() {
+          if (this.search) {
+            return this.tableData.filter(item =>
+              item.sampleName.toLowerCase().includes(this.search.toLowerCase())
+            );
+          } else {
+            return this.tableData;
+          }
+        },
+      },
+      methods: {
+        formatDate(row, column, cellValue) {
+          const dateStr = cellValue;
+          return dateStr.substring(0, 19).replace('T', ' ');
+        },
+        getStatusTagType(status) {
+          switch (status) {
+            case 'queued':
+              return 'info';
+            case 'running':
+              return 'warning';
+            case 'success':
+              return 'success';
+            case 'failed':
+              return 'danger';
+            default:
+              return '';
+          }
+        },
+        handleSelectionChange(val) {
+          this.multipleSelection = val;
+        },
+        deleteSample(index, row) {
+          axios.delete(`/login/api/auroch/${row.id}/`, {
+            headers: { 'X-CSRFToken': this.getCookie('csrftoken') }
+          })
+          .then(response => {
+            this.tableData.splice(index, 1);
+            this.$message.success('样本删除成功');
+          })
+          .catch(error => {
+            console.error(error);
+            this.$message.error('样本删除失败');
+          });
+        },
+        confirmDeleteSelectedSamples() {
+          if (this.multipleSelection.length > 0) {
+            this.$confirm('此操作将永久删除选中的样本, 是否继续?', '提示', {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
+            }).then(() => {
+              this.deleteSelectedSamples();
+            }).catch(() => {
+              this.$message.info('已取消删除');
+            });
+          }
+        },
+        deleteSelectedSamples() {
+          this.multipleSelection.forEach(row => {
+            const index = this.tableData.findIndex(item => item.id === row.id);
+            if (index !== -1) {
+              this.deleteSample(index, row);
+            }
+          });
+        },
+        showDetails(row) {
+          window.location.href = `/login/view_job/${row.id}`;
+        },
+        viewFile(row) {
+          const reportUrl = `/login/getreport/${row.id}/`; 
+          window.open(reportUrl, '_blank'); 
+        },
+        downloadFastq(row) {
+          const downloadUrl = `/login/download_fastq/${row.id}/`; 
+          this.$message.success('正在压缩Fastq，完成后自动开始下载，无需重复点击。');
+          window.location.href = downloadUrl; 
+        },
+        downloadFile(row) {
+          const downloadUrl = `/login/download_zip/${row.id}/`; 
+          this.$message.success('正在压缩数据，完成后自动开始下载，无需重复点击。');
+          window.location.href = downloadUrl; 
+        },
+        fetchTableData() {
+          axios.get('/login/api/auroch/')
+            .then(response => {
+              this.tableData = response.data;
+            })
+            .catch(error => {
+              console.error(error);
+              this.$message.error('获取数据失败');
+            });
+        },
+        refreshTableData() {
+          this.fetchTableData();
+          this.$message.success('刷新成功');
+        },
+        getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+              }
+            }
+          }
+          return cookieValue;
+        }
+      },
+      mounted() {
+        this.fetchTableData();
+      }
+    });
+  </script>
+</body>
+</html>

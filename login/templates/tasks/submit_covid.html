@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新冠分析界面</title>
+  <link rel="stylesheet" href="/static/css/index.css">
+  <link rel="stylesheet" href="/static/js/unpkg_index.css">
+  <link rel="stylesheet" href="/static/tasks/analyse.css">
+  <link rel="stylesheet" href="/static/tasks/upload.css">
+
+  <style>
+    body.hidden {
+      display: none;
+    }
+    body {
+      background-color: #f1f1f1;
+      font-family: Arial, sans-serif;
+    }
+    h3 {
+      text-align: left;
+      margin-top: 5px;
+      color: #333;
+    }
+
+    /* .form-container {
+      background-color: #fff;
+      border: 2px solid #ffffff;
+      border-radius: 10px;
+      padding: 30px;
+      margin: 1px auto;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .form-container .el-form-item {
+      margin-bottom: 30px;
+    } */
+    .dialog-footer {
+      text-align: -webkit-center;
+      margin-top: 20px;
+      margin-left: 10px;
+    }
+    .el-button {
+      margin-left: 10px;
+    }
+    .upload-section {
+      display: flex;
+      flex-direction: column;
+      margin-top: 10px;
+    }
+    .custom-select {
+      width: 50%;
+    }
+
+    .alert-container {
+      padding: 15px;
+      background-color: #f5f7fa;
+      border: 1px solid #d3d3d3;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #606266;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+    }
+    .alert-container .info-icon {
+      font-size: 16px;
+      color: #909399;
+      margin-right: 8px;
+    }
+    .el-link {
+      color: #409eff;
+      text-decoration: none;
+    }
+    .el-link:hover {
+      color: #66b1ff;
+      text-decoration: underline;
+    }
+    .custom-divider {
+      height: 1px;       
+      background-color: #e0e0e0;   
+      width: 100%;        
+      margin-bottom: 30px;
+    }
+
+    a.el-link {
+      display: inline;        
+      color: #409eff;      
+      text-decoration: none;  
+    }
+
+    .el-upload-list {
+      max-height: 150px; 
+      overflow-y: auto;
+      min-height: 40px;
+    }
+  </style>
+</head>
+<body class="hidden">
+  <div id="app">
+    <el-container>
+      <el-main>
+        <div class="form-container">
+          <el-form ref="form" :model="form" label-width="170px">
+            <h3 class="covid-analysis">新冠分析</h3>
+            <p></p>
+            <div class="custom-divider"></div>
+            
+            <el-form-item label="样本名称" required>
+              <el-input v-model="form.sampleName" class="custom-select"></el-input>
+            </el-form-item>
+
+            
+            
+            <el-form-item label="数据类型" required>
+              <el-radio-group v-model="form.inputFileType"
+                @change="handleFileTypeChange">
+                <el-radio-button label="fastq">Fastq文件</el-radio-button>
+                <el-radio-button label="fasta">Fasta文件</el-radio-button>
+              </el-radio-group>
+
+              <div v-if="form.inputFileType === 'fastq'" class="upload-container">
+                <el-upload
+                  action="/login/upload/"
+                  drag
+                  :auto-upload="true"
+                  :file-list="fileList"
+                  :before-upload="beforeUpload"
+                  :on-success="handleUploadSuccess"
+                  :on-change="handleFileChange"
+                  :on-progress="handleUploadProgress"
+                  :multiple="true"
+                  class="upload-component"><!-- custom-select or upload-component???? -->
+                  <i class="el-icon-upload"></i>
+                  <div class="el-upload__text">将Fastq文件拖到此处，或<em>点击上传</em></div>
+                </el-upload>
+                <!-- 提示信息 -->
+                <div v-if="fileList.length > 0" class="alert-container upload-status-container">
+                  <i class="upload-status-icon" :class="[isUploading ? 'el-icon-loading' : 'el-icon-success']"></i>
+                  <div>
+                    <template v-if="isUploading">
+                      <span class="upload-status-text upload-status-uploading">文件上传中，请等待上传完成后提交</span>
+                    </template>
+                    <template v-else>
+                      <span class="upload-status-text upload-status-success">所有文件已上传完成，可以提交任务</span>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="form.inputFileType === 'fasta'" class="upload-container">
+                <el-upload
+                  action="/login/upload/"
+                  drag
+                  :auto-upload="true"
+                  :file-list="fileList"
+                  :before-upload="beforeUpload"
+                  :on-success="handleUploadSuccess"
+                  :on-change="handleFileChange"
+                  :on-progress="handleUploadProgress"
+                  class="upload-component"><!-- custom-select or upload-component -->
+                  <i class="el-icon-upload"></i>
+                  <div class="el-upload__text">将Fasta文件拖到此处，或<em>点击上传</em></div>
+                </el-upload>
+                <!-- 提示信息 -->
+                <div v-if="fileList.length > 0" class="alert-container upload-status-container">
+                  <i class="upload-status-icon" :class="[isUploading ? 'el-icon-loading' : 'el-icon-success']"></i>
+                  <div>
+                    <template v-if="isUploading">
+                      <span class="upload-status-text upload-status-uploading">文件上传中，请等待上传完成后提交</span>
+                    </template>
+                    <template v-else>
+                      <span class="upload-status-text upload-status-success">所有文件已上传完成，可以提交任务</span>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </el-form-item>
+            
+
+            <el-form-item v-if="form.inputFileType === 'fasta'" label="是否为新冠全长" required>
+              <el-radio-group 
+              v-if="form.inputFileType === 'fasta'" 
+              v-model="form.fullLen">
+                <el-radio label="true">是</el-radio>
+                <el-radio label="false">否</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          
+
+            <el-form-item v-if="form.inputFileType === 'fastq'" label="是否过滤"   required>
+              <el-radio-group  v-if="form.inputFileType === 'fastq'" v-model="form.filter">
+                <el-radio label="true">是</el-radio>
+                <el-radio label="false">否</el-radio>
+              </el-radio-group>
+            </el-form-item>
+
+            <el-form-item v-if="form.filter === 'true' && form.inputFileType === 'fastq'" label="最小长度(bp)">
+              <el-input 
+                  v-model="form.minL" 
+                  placeholder="输入最小长度，单位为bp" 
+                  class="custom-select" 
+                  @input="validateMinLength(form.minL)">
+              </el-input>
+          </el-form-item>
+          
+          <el-form-item v-if="form.filter === 'true' && form.inputFileType === 'fastq'" label="最小质量值">
+              <el-input 
+                  v-model="form.minQ" 
+                  placeholder="输入0~10范围内Q值" 
+                  class="custom-select" 
+                  @input="validateMinQuality(form.minQ)">
+              </el-input>
+          </el-form-item>
+
+          </el-form>
+          <!-- 提交按钮 -->
+          <div class="dialog-footer">
+            <el-button type="primary" @click="submitForm" :disabled="isUploading">确定</el-button>
+          </div>
+        </div>
+      </el-main>
+    </el-container>
+    
+  </div>
+
+  <!-- 引入 Vue 和 Element UI -->
+  <script src="/static/js/vue@2"></script>
+  <script src="/static/js/jsdel.axios.min.js"></script>
+  <script src="/static/js/index.js"></script>
+
+  <!-- Vue 实例 -->
+  <script>
+    window.addEventListener('load', function() {
+      document.body.classList.remove('hidden');
+      console.log('所有资源已加载，页面显示');
+    });
+  
+    new Vue({
+      el: '#app',
+      data() {
+        return {
+          form: {
+            sampleName: '',
+            inputFile: '',
+            fullLen: '',
+            minQ: 6,
+            minL: 100,
+            filter: 'true' // 用于存储文件名
+          },
+          fileList: [],
+          isUploading: false // 跟踪上传状态
+        };
+      },
+      watch: {
+        'form.filter'(newVal) {
+          if (newVal === 'true') {
+            this.form.minQ = '6';
+            this.form.minL = '100';
+          } else {
+            this.form.minQ = '0';
+            this.form.minL = '0';
+          }
+        },
+        'form.inputFileType'(newVal) {
+          if (newVal === 'fastq') {
+            this.form.minQ = '6';
+            this.form.minL = '100';
+          } else {
+            this.form.minQ = '0';
+            this.form.minL = '0';
+          }
+        }
+      },
+      methods: {
+        handleFileTypeChange(value) {
+          this.form.inputFile = '';
+          this.fileList = [];
+        },
+        handleUploadSuccess(response, file, fileList) {
+          this.$message({ message: '文件上传成功', type: 'success', duration: 500 });
+          this.isUploading = false; // 上传完成，启用"确定"按钮
+          this.form.inputFile = this.fileList.map(file => file.name).join(', ');
+        },
+        beforeUpload(file) {
+          const isFastqOrFasta = file.name.endsWith('.fastq') || file.name.endsWith('.fq') || file.name.endsWith('.gz') || file.name.endsWith('.fasta') || file.name.endsWith('.fa');
+          if (!isFastqOrFasta) {
+            this.$message({ message: '只能上传Fastq或Fasta格式的文件', type: 'error', duration: 500 });
+          }
+          this.isUploading = true; // 上传开始，禁用"确定"按钮
+          return isFastqOrFasta;
+        },
+        resetForm() {
+          this.form = {
+            sampleName: '',
+            inputFile: '',
+            fullLen: '',
+            minQ: '0',
+            minL: '0',
+            filter: 'true'
+          };
+          this.fileList = [];
+        },
+        handleUploadProgress(event, file, fileList) {
+          this.isUploading = true;
+        },
+        handleFileChange(file, fileList) {
+          this.fileList = fileList;
+          if (file.status === 'ready') {
+            this.isUploading = true;
+          }
+          // 添加自动滚动到底部的功能
+          this.$nextTick(() => {
+            const uploadList = document.querySelector('.el-upload-list');
+            if (uploadList) {
+              uploadList.scrollTop = uploadList.scrollHeight;
+            }
+          });
+        },
+    
+        validateSampleName(sampleName) {
+          const regex = /^[a-zA-Z0-9_-]+$/; 
+          return regex.test(sampleName);
+        },
+        validateMinLength(value) {
+          const regex = /^\d*$/; // 只允许输入数字
+          if (!regex.test(value)) {
+              this.form.minL = value.replace(/\D/g, ''); // 移除非数字字符
+          }
+        },
+        validateMinQuality(value) {
+          const regex = /^\d*$/; // 只允许输入数字
+          if (!regex.test(value)) {
+              this.form.minQ = value.replace(/\D/g, ''); // 移除非数字字符
+          } else if (value > 10) {
+              this.form.minQ = 10; // 限制最大值为10
+          } else if (value < 0) {
+              this.form.minQ = 0; // 限制最小值为0
+          }
+        },
+        submitForm() {
+       
+          if (!this.validateSampleName(this.form.sampleName)) {
+            this.$message({ message: '样本名称不能包含空格或特殊字符', type: 'error', duration: 500 });
+            return;
+          }
+  
+          if (this.isUploading) {
+            this.$message({ message: '请等待文件上传完成', type: 'warning', duration: 500 });
+            return;
+          }
+  
+          if (this.form.sampleName && this.form.inputFile) {
+            const apiEndpoint = '/login/api/covid/';
+            axios.post(apiEndpoint, {
+              sampleName: this.form.sampleName,
+              inputFile: this.form.inputFile,
+              fullLen: this.form.fullLen,
+              minQ: this.form.minQ,
+              minL: this.form.minL
+            }, {
+              headers: { 'X-CSRFToken': this.getCookie('csrftoken') }
+            })
+              .then(response => {
+                this.$message({
+                  message: '任务创建成功',
+                  type: 'success',
+                  duration: 0,
+                  showClose: true,
+                  onClose: () => { },
+                  dangerouslyUseHTMLString: true,
+                  customClass: 'custom-message-class',
+                  duration: 3000,
+                });
+  
+                this.$nextTick(() => {
+                  const messageNode = document.querySelector('.custom-message-class');
+                  if (messageNode) {
+                    const button = document.createElement('button');
+                    button.innerText = '查看任务';
+                    button.style.textDecoration = 'underline';
+                    button.style.color = '#67C23A';
+                    button.className = 'el-button el-button--text';
+                    button.addEventListener('click', this.viewFile);
+                    messageNode.appendChild(button);
+                  }
+                });
+                this.resetForm();
+              })
+              .catch(error => {
+                console.error(error);
+                this.$message({ message: '任务创建失败', type: 'error', duration: 500 });
+              });
+          } else {
+            this.$message({ message: '样本名称或文件未填入', type: 'warning', duration: 500 });
+          }
+        },
+        viewFile() {
+          const jobUrl = `/admin/#/login/view_job/`;
+          const newWindow = window.open(jobUrl, '_blank');
+  
+          const attemptClick = function () {
+            if (newWindow.document.readyState === 'complete') {
+              const menuItems = newWindow.document.querySelectorAll('ul.el-menu li.el-menu-item');
+              menuItems.forEach(item => {
+                const span = item.querySelector('span');
+                if (span && span.textContent.trim() === '任务管理') {
+                  item.click();
+                }
+              });
+            } else {
+              setTimeout(attemptClick, 50);
+            }
+          };
+  
+          setTimeout(attemptClick, 50);
+        },
+        getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+              }
+            }
+          }
+          return cookieValue;
+        },
+      }
+    });
+  </script>
+  
+</body>
+</html>

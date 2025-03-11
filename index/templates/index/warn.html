@@ -1,0 +1,29 @@
+{% extends 'index/base.html' %}
+{% block title %}
+    预约记录
+{% endblock %}
+{% block warn_active %}
+    active
+{% endblock %}
+{% block index %}
+    <main class="container">
+        {% for i in integrals %}
+
+
+            <div class="bg-danger p-5 rounded mt-3">
+                <h2>{{ i.title }}</h2>
+                <p class="lead">{{ i.text }}</p>
+                <p class="lead">时间：{{ i.time }}</p>
+
+            </div>
+
+        {% endfor %}
+    </main>
+    <br class="mt-5">
+    <br class="mt-5">
+    <br class="mt-5">
+    <br class="mt-5">
+    <br class="mt-5">
+    <br class="mt-5">
+    <br class="mt-5">
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends 'index/seat.html' %}
+{% block seat %}
+    <div class="alert alert-warning mt-3" role="alert">
+        <p>提示：</p>
+        <input type="radio" class="btn-check"
+               id="success-outlined-ys"
+               autocomplete="off">
+        <label class="btn btn-outline-secondary m-1"
+               for="success-outlined-ys">33</label>占用 &emsp;
+
+        <input type="radio" class="btn-check"
+               id="success-outlined-ys"
+               autocomplete="off">
+        <label class="btn btn-outline-danger m-1"
+               for="success-outlined-ys">33</label>关闭&emsp;
+
+        <input type="radio" class="btn-check"
+               id="success-outlined-ys"
+               autocomplete="off">
+        <label class="btn btn-outline-success m-1"
+               for="success-outlined-ys">33</label>空闲&emsp;
+
+    </div>
+    {% if seat %}
+
+
+        <form action="{% url 'seat' room_id %}" class="mb-5" method="post">
+            <div class="accordion-item border-0">
+                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo"
+                     data-bs-parent="#accordionExample">
+                    <div class="accordion-body">
+
+                        <input type="text" name="room" value="{{ room_id }}">
+                        <input type="text" name="day" value="{{ time_selected_r }}">
+                        <input type="text" name="time" value="{{ time_selected_s }}">
+
+
+                    </div>
+                </div>
+
+                <h6 class="m-2 mt-3 text-center">请选择座位号：（
+                    {{ room_1 }}
+
+                    {% if time_selected_r == 1 %}
+                        今天
+                    {% elif time_selected_r == 2 %}
+                        明天
+                    {% endif %}
+                    {% if time_selected_s == 1 %}
+                        上午
+                    {% elif time_selected_s == 2 %}
+                        下午
+                    {% else %}
+                        晚上
+                    {% endif %}
+                    )</h6>
+                {% csrf_token %}
+                <div class="col-12">
+                    <div class="row g-0">
+                        {% for key,value in seat.items %}
+                            {% if value == 0 %}
+                                <div class="col-2">
+                                    <input value="{{ key }}" type="radio" class="btn-check" name="number"
+                                           id="success-outlined-{{ key }}"
+                                           autocomplete="off">
+
+                                    <label style="width: 44px;" class="btn btn-outline-success m-1"
+                                           for="success-outlined-{{ key }}">{{ key }}</label>
+                                </div>
+                            {% elif value == 1 %}
+                                <div class="col-2">
+                                    <input value="{{ key }}" type="radio" class="btn-check" name="number"
+                                           id="success-outlined-{{ key }}"
+                                           autocomplete="off" disabled>
+                                    <label style="width: 44px;" class="btn btn-outline-secondary m-1"
+                                           for="success-outlined-{{ key }}">{{ key }}</label>
+                                </div>
+                            {% endif %}
+
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <input class="form-control btn btn-lg btn-primary" type="submit" value="确定预约">
+                </div>
+                <br class="mt-5"><br class="mt-5">
+                <br class="mt-5"><br class="mt-5">
+            </div>
+        </form>
+    {% endif %}
+{% endblock %}

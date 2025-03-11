@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新冠污水分析界面</title>
+    <link rel="stylesheet" href="/static/css/index.css">
+    <link rel="stylesheet" href="/static/js/unpkg_index.css">
+    <link rel="stylesheet" href="/static/tasks/analyse.css">
+    <link rel="stylesheet" href="/static/tasks/upload.css">
+    <style>
+      body.hidden {
+        display: none;
+      }
+      body {
+        background-color: #f1f1f1;
+        font-family: Arial, sans-serif;
+
+         
+      }
+      h3 {
+        text-align: left;
+        margin-top: 5px;
+        color: #333;
+        
+      }
+
+      /* .form-container {
+        background-color: #fff;
+        border: 2px solid #ffffff;
+        border-radius: 10px;
+        padding: 30px;
+        margin: 1px auto;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      .form-container .el-form-item {
+        margin-bottom: 30px;
+      } */
+
+      .dialog-footer {
+        text-align: -webkit-center;
+        margin-top: 20px;
+        margin-left: 10px;
+      }
+      .el-button {
+        margin-left: 10px;
+      }
+      .upload-section {
+        display: flex;
+        flex-direction: column;
+        margin-top: 10px;
+      }
+      .custom-select {
+        width: 50%;
+      }
+
+      .alert-container {
+        padding: 15px;
+        background-color: #f5f7fa;
+        border: 1px solid #d3d3d3;
+        border-radius: 4px;
+        font-size: 14px;
+        color: #606266;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+      }
+      .alert-container .info-icon {
+        font-size: 16px;
+        color: #909399;
+        margin-right: 8px;
+      }
+      .el-link {
+        color: #409eff;
+        text-decoration: none;
+      }
+      .el-link:hover {
+        color: #66b1ff;
+        text-decoration: underline;
+      }
+      .custom-divider {
+        height: 1px;       
+        background-color: #e0e0e0;   
+        width: 100%;        
+        margin-bottom: 30px;
+      }
+
+
+      .el-upload-list {
+        max-height: 150px; 
+        overflow-y: auto;
+        min-height: 40px;
+      }
+      
+
+    </style>
+  </head>
+  <body class="hidden">
+    <div id="app">
+      <el-container>
+        <el-main>
+          <div class="form-container">
+            <el-form ref="form" :model="form" label-width="170px">
+              <h3 class="covid-analysis">新冠污水分析</h3>
+              <p></p>
+              <div class="custom-divider"></div>
+              
+              <el-form-item label="样本名称" required>
+                <el-input v-model="form.sampleName" class="custom-select"></el-input>
+              </el-form-item>
+
+              <el-form-item label="上传Fastq文件" required>
+                <el-radio-group v-model="form.inputFileType" @change="handleFileTypeChange">
+                  <div v-if="form.inputFileType === 'fastq'" class="upload-container">
+                    <el-upload
+                      action="/login/upload/"
+                      drag
+                      :auto-upload="true"
+                      :file-list="fileList"
+                      :before-upload="beforeUploadFastq"
+                      :on-success="handleUploadSuccess"
+                      :on-change="handleFileChange"
+                      :on-progress="handleUploadProgress"
+                      :multiple="true" 
+                      class="upload-component">
+                      <i class="el-icon-upload"></i>
+                      <div class="el-upload__text">将Fastq文件拖到此处</div>
+                    </el-upload>
+                    <!-- 提示信息 -->
+                    <div v-if="fileList.length > 0" class="alert-container upload-status-container">
+                      <i class="upload-status-icon" :class="[isUploading ? 'el-icon-loading' : 'el-icon-success']"></i>
+                      <div>
+                        <template v-if="isUploading">
+                          <span class="upload-status-text upload-status-uploading">文件上传中，请等待上传完成后提交</span>
+                        </template>
+                        <template v-else>
+                          <span class="upload-status-text upload-status-success">所有文件已上传完成，可以提交任务</span>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+                </el-radio-group>
+              </el-form-item>
+              
+             <el-form-item label="是否合并Fastq" required>
+              <el-radio-group v-model="form.mergeFastq">
+                <el-tooltip class="item" effect="dark" content="勾选后所有Fastq文件将合并分析" placement="top">
+                  <el-radio label="true">是</el-radio>
+                </el-tooltip>
+                <el-radio label="false">否</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            
+              <el-form-item label="测序类型" required>
+                <el-select
+                  v-model="form.seqType"
+                  placeholder="请选择"
+                  class="custom-select">
+                  <el-option v-for="item in referenceOptions"
+                    :key="item.value" :label="item.label" :value="item.value"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="最小质量值" required>
+                <el-input v-model="form.minQ" class="custom-select"></el-input>
+              </el-form-item>
+              <el-form-item v-if="form.seqType === '三代测序'" label="最小长度" required>
+                <el-input v-model="form.minL" type="number"class="custom-select"></el-input>
+              </el-form-item>
+
+              <el-form-item label="是否过滤比对结果" required>
+                <el-radio-group v-model="form.minScore0">
+                  <el-radio label="true">是</el-radio>
+                  <el-radio label="false">否</el-radio>
+
+                </el-radio-group>
+              </el-form-item>
+              
+              <el-form-item v-if="form.minScore0 === 'true'" label="最低比对分数" required>
+                <el-input v-model="form.minScore" type="number" class="custom-select"></el-input>
+              </el-form-item>
+              
+              <el-form-item v-if="form.minScore0 === 'true'" label="最低相似度" required>
+                <el-input v-model="form.minSimilarity" type="number" class="custom-select"></el-input>
+              </el-form-item>
+              
+              <el-form-item v-if="form.minScore0 === 'true'" label="最低置信度（e-value）" required>
+                <el-input v-model="form.minEval" type="number" class="custom-select"></el-input>
+              </el-form-item>
+              
+         
+              
+
+
+            <div class="dialog-footer">
+              <el-button type="primary" @click="submitForm" :disabled="!isFormValid || isUploading">确定</el-button>
+            </div>
+          </div>
+        </el-main>
+      </el-container>
+    </div>
+
+    <script src="/static/js/vue@2"></script>
+    <script src="/static/js/jsdel.axios.min.js"></script>
+    <script src="/static/js/index.js"></script>
+<script>
+export default {
+  data() {
+    return {
+      form: {
+        //mergeFastq: 'true',
+      },
+    };
+  },
+};
+</script>
+    <script>
+      window.addEventListener('load', function() {
+          document.body.classList.remove('hidden');
+          console.log('所有资源已加载，页面显示');
+      });
+    
+      new Vue({
+          el: '#app',
+          data() {
+              return {
+                  form: {
+                      sampleName: '',
+                      seqType: '三代测序',
+                      inputFileType: 'fastq',
+                      mergeFastq: 'false',
+                      inputFile: '',
+                      filter: 'false',
+                      minScore0: 'false',
+                      minL: '6',
+                      minQ: '100',
+                      minScore: '0',
+                      minSimilarity: '0',
+                      minEval: '0',
+                  },
+                  fileList: [],
+                  referenceOptions: [
+                      { value: '三代测序', label: '三代测序' },
+                      { value: '二代测序', label: '二代测序' }
+                  ],
+                  BasecallModels: {
+                      models: []
+                  },
+                  isUploading: false
+              };
+          },
+    
+          methods: {
+              handleUploadSuccess(response, file, fileList) {
+                  this.$message({ message: '文件上传成功', type: 'success', duration: 500 });
+                  this.form.inputFile = this.fileList.map(file => file.name).join(', ');
+                  this.isUploading = false;
+              },
+              beforeUploadFastq(file) {
+                  const isFastq = file.name.endsWith('.fastq')|| file.name.endsWith('.fq') || file.name.endsWith('.gz');
+                  if (!isFastq) {
+                      this.$message({ message: '只能上传以 fastq,fq,gz结尾的文件', type: 'error', duration: 1000 });
+                  }
+                  this.isUploading = true;
+                  return isFastq;
+              },
+              resetForm() {
+                  this.form = {
+                      sampleName: '',
+                      seqType: '三代测序',
+                      inputFileType: 'fastq',
+                      mergeFastq: 'false',
+                      inputFile: '',
+                      filter: 'false',
+                      minScore0: 'false',
+                      minL: '6',
+                      minQ: '100',
+                      minScore: '0',
+                      minSimilarity: '0',
+                      minEval: '0',
+                  };
+                  this.fileList = [];
+                  this.fetchBasecallModel();
+                  this.updateDefaults(); // 更新默认值
+              },
+              handleFileTypeChange(value) {
+                  if (value === 'pod5' || value === 'fastq') {
+                      this.form.inputFile = '';
+                      this.fileList = [];
+                      this.isUploading = false;
+                  }
+              },
+              handleFileChange(file, fileList) {
+                this.fileList = fileList;
+                if (file.status === 'ready') {
+                  this.isUploading = true;
+                }
+                // 添加自动滚动到底部的功能
+                this.$nextTick(() => {
+                  const uploadList = document.querySelector('.el-upload-list');
+                  if (uploadList) {
+                    uploadList.scrollTop = uploadList.scrollHeight;
+                  }
+                });
+              },
+              handleUploadProgress(event, file, fileList) {
+                this.isUploading = true;
+              },
+              validateSampleName(sampleName) {
+                  const regex = /^[a-zA-Z0-9_-]+$/;
+                  return regex.test(sampleName);
+              },
+              submitForm() {
+                  if (!this.validateSampleName(this.form.sampleName)) {
+                      this.$message({ message: '样本名称不能包含空格或特殊字符', type: 'error', duration: 1500 });
+                      return;
+                  }
+
+                  if (this.isFormValid) {
+                      const apiEndpoint = '/login/api/sewage_water/';
+                      axios.post(apiEndpoint, {
+                          sampleName: this.form.sampleName,
+                          seqType: this.form.seqType,
+                          inputFile: this.form.inputFile,
+                          minL: this.form.minL,
+                          minQ: this.form.minQ,
+                          minScore: this.form.minScore,
+                          minSimilarity: this.form.minSimilarity,
+                          minEval: this.form.minEval,
+                          mergeFastq:this.form.mergeFastq,
+                      }, {
+                          headers: { 'X-CSRFToken': this.getCookie('csrftoken') }
+                      })
+                      .then(response => {
+                          this.$message({
+                              message: '任务创建成功',
+                              type: 'success',
+                              duration: 0,
+                              showClose: true,
+                              customClass: 'custom-message-class',
+                              duration: 3000,
+                          });
+                          this.$nextTick(() => {
+                            const messageNode = document.querySelector('.custom-message-class');
+                            if (messageNode) {
+                              const button = document.createElement('button');
+                              button.innerText = '查看任务';
+                              button.style.textDecoration = 'underline';
+                              button.style.color = '#67C23A';
+                              button.className = 'el-button el-button--text';
+                              button.addEventListener('click', this.viewFile);
+                              messageNode.appendChild(button);
+                            }
+                          });
+    
+                          this.resetForm();
+                      })
+                      .catch(error => {
+                          console.error(error);
+                          this.$message({ message: '任务创建失败', type: 'error', duration: 1000 });
+                      });
+                  } else {
+                      this.$message({ message: '样本名称和数据文件为必填项', type: 'error', duration: 1000 });
+                  }
+              },
+              viewFile() {
+                const jobUrl = '/admin/#/login/view_job/';
+                const newWindow = window.open(jobUrl, '_blank');
+
+                const attemptClick = function () {
+                  if (newWindow.document.readyState === 'complete') {
+                    const menuItems = newWindow.document.querySelectorAll('ul.el-menu li.el-menu-item');
+                    menuItems.forEach(item => {
+                      const span = item.querySelector('span');
+                      if (span && span.textContent.trim() === '任务管理') {
+                        item.click();
+                      }
+                    });
+                  } else {
+                    setTimeout(attemptClick, 50);
+                  }
+                };
+
+                setTimeout(attemptClick, 50);
+              },
+              fetchBasecallModel() {
+                  axios.get('/login/getmodel/')
+                      .then(response => {
+                          this.BasecallModels = response.data;
+                          if (this.BasecallModels.models.length > 0) {
+                              this.form.model = this.BasecallModels.models[this.BasecallModels.models.length - 1].value;
+                          }
+                      })
+                      .catch(error => {
+                          console.error(error);
+                          this.$message({ message: '获取模型失败', type: 'error', duration: 1000 });
+                      });
+              },
+              getCookie(name) {
+                  let cookieValue = null;
+                  if (document.cookie && document.cookie !== '') {
+                      const cookies = document.cookie.split(';');
+                      for (let i = 0; i < cookies.length; i++) {
+                          const cookie = cookies[i].trim();
+                          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                              break;
+                          }
+                      }
+                  }
+                  return cookieValue;
+              },
+              updateDefaults() {
+                  if (this.form.seqType === '三代测序') {
+                      this.form.minQ = '6'; 
+                      this.form.minL = '100'; 
+                  } else if (this.form.seqType === '二代测序') {
+                      this.form.minQ = '20';  
+                      this.form.minL = '0';  
+                  }
+    
+                  if (this.form.minScore0 === 'true') {
+                      this.form.minScore = '0'; 
+                      this.form.minSimilarity = '90'; 
+                      this.form.minEval = '0.00001'; 
+                  } else if (this.form.minScore0 === 'false') {
+                      this.form.minScore = 'None';  
+                      this.form.minSimilarity = 'None'; 
+                      this.form.minEval = 'None';  
+                  } else {
+                      this.form.minScore = '0';
+                      this.form.minSimilarity = '0'; 
+                      this.form.minEval = '0'; 
+                  }
+
+              }
+          },
+          mounted() {
+              this.fetchBasecallModel();
+              this.updateDefaults(); // 初始化默认值
+          },
+          computed: {
+              isFormValid() {
+                  return this.form.sampleName && this.form.inputFile !== '';
+              }
+          },
+          watch: {
+              'form.seqType': 'updateDefaults',
+              'form.minScore0': 'updateDefaults',
+              'form.filter'(newVal) {
+                  if (newVal === 'true') {
+                      this.form.minQ = '6';
+                      this.form.minL = '100';
+                  }
+              }
+          }
+      });
+    </script>
+    
+  
+  </body>
+</html>

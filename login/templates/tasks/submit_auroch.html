@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Task</title>
+    <link rel="stylesheet" href="/static/css/index.css">
+    <link rel="stylesheet" href="/static/js/unpkg_index.css">
+    <link rel="stylesheet" href="/static/tasks/analyse.css">
+    <style>
+      body.hidden {
+        display: none;
+      }
+      body {
+        background-color: #f1f1f1;
+        font-family: Arial, sans-serif;
+      }
+      h3 {
+        text-align: left;
+        margin-top: 5px;
+        color: #333;
+      }
+
+      /* .form-container {
+        background-color: #fff;
+        border: 2px solid #ffffff;
+        border-radius: 10px;
+        padding: 30px;
+        margin: 1px auto;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      .form-container .el-form-item {
+        margin-bottom: 30px;
+      } */
+      .dialog-footer {
+        text-align: -webkit-center;
+        margin-top: 20px;
+        margin-left: 10px;
+      }
+      .el-button {
+        margin-left: 10px;
+      }
+      .upload-section {
+        display: flex;
+        flex-direction: column;
+        margin-top: 10px;
+      }
+      .custom-select {
+        width: 50%;
+      }
+      .form-item-with-tip .el-form-item__content {
+        margin-left: 8px; /* 减少单选组右侧间距 */
+      }
+      
+      .tip-icon {
+        margin-left: 4px; /* 缩小提示图标与单选组的间距 */
+      }
+      .alert-container {
+        padding: 15px;
+        background-color: #f5f7fa;
+        border: 1px solid #d3d3d3;
+        border-radius: 4px;
+        font-size: 14px;
+        color: #606266;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+      }
+      .alert-container .info-icon {
+        font-size: 16px;
+        color: #909399;
+        margin-right: 8px;
+      }
+      .el-link {
+        color: #409eff;
+        text-decoration: none;
+      }
+      .el-link:hover {
+        color: #66b1ff;
+        text-decoration: underline;
+      }
+      .custom-divider {
+        height: 1px;       
+        background-color: #e0e0e0;   
+        width: 100%;        
+        margin-bottom: 30px;
+      }
+
+
+      .el-upload-list {
+        max-height: 150px; 
+        overflow-y: auto;
+        min-height: 40px;
+      }
+
+      /* 自定义popover样式 */
+      .custom-popover {
+        padding: 12px 16px !important;
+        min-width: 200px !important;
+      }
+      .custom-popover[x-placement^="right"] {
+        margin-left: 10px !important;
+      }
+      .custom-popover .el-popover__title {
+        color: #303133 !important;
+        font-size: 14px !important;
+        line-height: 1.4 !important;
+        margin-bottom: 8px !important;
+      }
+      .field-label {
+        cursor: pointer;
+        color: #606266;
+      }
+      .field-label:hover {
+        color: #409EFF;
+      }
+
+      .tip-icon {
+        margin-left: 80px;
+        color: #909399;
+        cursor: pointer;
+      }
+      .tip-icon:hover {
+        color: #409EFF;
+      }
+    </style>
+  </head>
+  <body class="hidden">
+    <div id="app">
+      <el-container>
+        <el-main>
+          <div class="form-container">
+            <el-form ref="form" :model="form" label-width="150px">
+              <h3 class="covid-analysis">Auroch分析</h3>
+              <p></p>
+              <div class="custom-divider"></div>
+              <el-form-item label="样本名称" required>
+                <el-input v-model="form.sampleName" class="custom-select"></el-input>
+              </el-form-item>
+              <el-form-item label="参考序列" required>
+                <el-select
+                  v-model="form.referenceSequence"
+                  placeholder="请选择"
+                  class="custom-select">
+                  <el-option v-for="item in referenceOptions"
+                    :key="item.value" :label="item.label" :value="item.value"></el-option>
+                </el-select>
+              </el-form-item>
+
+              <el-form-item label="数据类型" required>
+                <el-radio-group v-model="form.inputFileType"
+                  @change="handleFileTypeChange">
+                  <el-radio-button label="pod5">Pod5文件</el-radio-button>
+                  <el-radio-button label="fastq">Fastq文件</el-radio-button>
+                </el-radio-group>
+
+                <!-- File input section -->
+                <div v-if="form.inputFileType === 'pod5'" style="display: flex; align-items: flex-start; gap: 10px;">
+                  <el-upload
+                    action="/login/upload/"
+                    drag
+                    multiple
+                    :auto-upload="true"
+                    :file-list="fileList"
+                    :before-upload="beforeUploadPod5"
+                    :on-success="handleUploadSuccess"
+                    :on-change="handleFileChange"
+                    :on-progress="handleUploadProgress"
+                    class="custom-select"
+                  >
+                    <i class="el-icon-upload"></i>
+                    <div class="el-upload__text">
+                      将Pod5文件或压缩包（支持多选）拖到此处
+                    </div>
+                  </el-upload>
+                  <!-- 提示信息 -->
+                  <div v-if="fileList.length > 0" class="alert-container" style="margin-top: 0; flex: 1;">
+                    <i class="info-icon" :class="[isUploading ? 'el-icon-loading' : 'el-icon-success']"></i>
+                    <div>
+                    
+                      <template v-if="isUploading">
+                        <span style="color: #E6A23C;">文件上传中，请等待上传完成后提交
+                          <div style="font-size: 12px; color: #909399; margin-top: 4px;">
+                          </div>
+                        </span>
+                      </template>
+                      <template v-else>
+                        <span style="color: #67C23A;">所有文件已上传完成，可以提交任务</span>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+                
+                <el-upload
+                  v-if="form.inputFileType === 'fastq'"
+                  action="/login/upload/"
+                  drag
+                  multiple
+                  :auto-upload="true"
+                  :file-list="fileList"
+                  :before-upload="beforeUploadFastq"
+                  :on-success="handleUploadSuccess"
+                  :on-change="handleFileChange"
+                  class="custom-select">
+                  <i class="el-icon-upload"></i>
+                  <div class="el-upload__text">将Fastq文件（支持多选）拖到此处</div>
+                </el-upload>
+              </el-form-item>
+              <template>
+                
+                  <el-form-item v-if="form.inputFileType === 'pod5'" label="算法模型" required>
+                    <el-select
+                      v-model="form.model"
+                      placeholder="请选择算法模型"
+                      class="custom-select"
+                    >
+                      <el-option
+                        v-for="item in BasecallModels.models"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                      >
+                      </el-option>
+                    </el-select>
+                  </el-form-item>
+                
+              </template>
+              
+
+              <el-form-item label="是否过滤" required>
+                <el-radio-group v-model="form.filter">
+                  <el-radio label="true">是</el-radio>
+                  <el-radio label="false">否</el-radio>
+                </el-radio-group>
+              </el-form-item>
+
+
+
+              <el-form-item v-if="form.filter === 'true'" label="最小长度(bp)">
+                <el-input v-model="form.minL" placeholder="输入最小长度，单位为bp" class="custom-select"></el-input>
+              </el-form-item>
+              <el-form-item v-if="form.filter === 'true'" label="最小质量值">
+                <el-input v-model="form.minQ" placeholder="输入0~10范围内Q值" class="custom-select"></el-input>
+              </el-form-item>
+
+              <el-form-item 
+                label="生成一致性序列" 
+                required 
+                class="form-item-with-tip"
+              >
+                <el-radio-group  v-model="form.generateConsensus">
+                  <el-radio label="true">是</el-radio>
+                  <el-radio label="false">否</el-radio>
+                </el-radio-group>
+                <!-- 提示图标放在内容区域 -->
+                <el-popover
+                  placement="right"
+                  
+                  trigger="hover"
+                  popper-class="custom-popover"
+                  content="会显著增加分析时间，不建议勾选"
+                >
+                  <i class="el-icon-question tip-icon" slot="reference"></i>
+                </el-popover>
+              </el-form-item>
+            </el-form>
+
+            <div class="dialog-footer">
+              <el-button type="primary" @click="submitForm" :disabled="!isFormValid || isUploading">确定</el-button>
+            </div>
+          </div>
+        </el-main>
+      </el-container>
+    </div>
+
+    <script src="/static/js/vue@2"></script>
+    <script src="/static/js/jsdel.axios.min.js"></script>
+    <script src="/static/js/index.js"></script>
+
+       <script>
+        window.addEventListener('load', function() {
+          document.body.classList.remove('hidden');
+          console.log('所有资源已加载，页面显示');
+        });
+      
+        new Vue({
+          el: '#app',
+          data() {
+            return {
+              form: {
+                sampleName: '',
+                referenceSequence: 'Covid',
+                inputFileType: '',
+                inputFile: '',
+                filter: 'false',
+                minL: '0',
+                minQ: '0',
+                generateConsensus: 'false',
+                model: ''
+              },
+              fileList: [],
+              referenceOptions: [
+                { value: 'Human', label: 'Human' },
+                { value: 'Ecoli', label: 'Ecoli' },
+                { value: 'HPV', label: 'HPV' },
+                { value: 'Lambda', label: 'Lambda' },
+                { value: 'Covid', label: 'Covid-19' }
+              ],
+              BasecallModels: {
+                models: []
+              },
+              isUploading: false,
+              uploadedCount: 0
+            };
+          },
+          methods: {
+            handleUploadProgress(event, file, fileList) {
+              this.isUploading = true;
+            },
+            handleUploadSuccess(response, file, fileList) {
+              this.fileList = fileList;
+              this.uploadedCount = fileList.filter(file => file.status === 'success').length;
+              this.$message({ message: '文件上传成功', type: 'success', duration: 500 });
+              this.form.inputFile = this.fileList.map(file => file.name).join(', ');
+              if (this.uploadedCount === fileList.length) {
+                this.isUploading = false;
+              }
+            },
+            beforeUploadFastq(file) {
+              const isFastq = file.name.endsWith('.fastq') || file.name.endsWith('.fastq.gz');
+              if (!isFastq) {
+                this.$message({ message: '只能上传以 .fastq 或 .fastq.gz)的结尾的文件', type: 'success', duration: 1000 });
+              }
+              this.isUploading = true; // Files are being uploaded, disable the button
+              return isFastq;
+            },
+            beforeUploadPod5(file) {
+              const isPod5 = file.name.endsWith('.pod5') || file.name.endsWith('.zip');
+              if (!isPod5) {
+                this.$message({ message: '只能上传以 .pod5 或 .zip 结尾的文件', type: 'success', duration: 1000 });
+              }
+              this.isUploading = true; // Files are being uploaded, disable the button
+              return isPod5;
+            },
+            resetForm() {
+              this.form = {
+                sampleName: '',
+                referenceSequence: 'Covid',
+                inputFileType: '',
+                inputFile: '',
+                filter: 'false',
+                minL: '0',
+                minQ: '0',
+                generateConsensus: 'false',
+                model: ''
+              };
+              this.fileList = [];
+              this.fetchBasecallModel();
+            },
+            handleFileChange(file, fileList) {
+              this.fileList = fileList;
+              this.uploadedCount = fileList.filter(file => file.status === 'success').length;
+              if (file.status === 'ready') {
+                this.isUploading = true;
+              }
+              // 添加自动滚动到底部的功能
+              this.$nextTick(() => {
+                const uploadList = document.querySelector('.el-upload-list');
+                if (uploadList) {
+                  uploadList.scrollTop = uploadList.scrollHeight;
+                }
+              });
+            },
+            handleFileTypeChange(value) {
+              if (value === 'pod5' || value === 'fastq') {
+                this.form.inputFile = '';
+                this.fileList = [];
+                this.isUploading = false;
+                this.uploadedCount = 0;  // 重置上传计数
+              }
+            },
+            validateSampleName(sampleName) {
+              const regex = /^[a-zA-Z0-9_-]+$/;
+              return regex.test(sampleName);
+            },
+            submitForm() {
+              if (!this.validateSampleName(this.form.sampleName)) {
+                this.$message({ message: '样本名称不能包含空格或特殊字符', type: 'error', duration: 1500 });
+                return;
+              }
+      
+              if (this.isFormValid) {
+                const apiEndpoint = '/login/api/auroch/';
+                axios.post(apiEndpoint, {
+                  sampleName: this.form.sampleName,
+                  referenceSequence: this.form.referenceSequence,
+                  inputFile: this.form.inputFile,
+                  minL: this.form.minL,
+                  minQ: this.form.minQ,
+                  generateConsensus: this.form.generateConsensus,
+                  basecallModels: this.form.model
+                }, {
+                  headers: { 'X-CSRFToken': this.getCookie('csrftoken') }
+                })
+                .then(response => {
+                this.$message({
+                  message: '任务创建成功',
+                  type: 'success',
+                  duration: 0,
+                  showClose: true,
+                  onClose: () => { },
+                  dangerouslyUseHTMLString: true,
+                  customClass: 'custom-message-class',
+                  duration: 3000,
+                });
+
+                this.$nextTick(() => {
+                  const messageNode = document.querySelector('.custom-message-class');
+                  if (messageNode) {
+                    const button = document.createElement('button');
+                    button.innerText = '查看任务';
+                    button.style.textDecoration = 'underline';
+                    button.style.color = '#67C23A';
+                    button.className = 'el-button el-button--text';
+                    button.addEventListener('click', this.viewFile);
+                    messageNode.appendChild(button);
+                  }
+                });
+                this.resetForm();
+              })
+                .catch(error => {
+                  console.error(error);
+                  this.$message({ message: '任务创建失败', type: 'error', duration: 1000 });
+                });
+              } else {
+                this.$message({ message: '样本名称和数据文件为必填项', type: 'error', duration: 1000 });
+              }
+            },
+            viewFile() {
+            const jobUrl = '/admin/#/login/view_job/';
+            const newWindow = window.open(jobUrl, '_blank');
+
+            const attemptClick = function () {
+              if (newWindow.document.readyState === 'complete') {
+                const menuItems = newWindow.document.querySelectorAll('ul.el-menu li.el-menu-item');
+                menuItems.forEach(item => {
+                  const span = item.querySelector('span');
+                  if (span && span.textContent.trim() === '任务管理') {
+                    item.click();
+                  }
+                });
+              } else {
+                setTimeout(attemptClick, 50);
+              }
+            };
+
+            setTimeout(attemptClick, 50);
+          },
+            fetchBasecallModel() {
+              axios.get('/login/getmodel/')
+                .then(response => {
+                  this.BasecallModels = response.data;
+                  if (this.BasecallModels.models.length > 0) {
+                    this.form.model = this.BasecallModels.models[this.BasecallModels.models.length - 1].value;
+                  }
+                })
+                .catch(error => {
+                  console.error(error);
+                  this.$message({ message: '获取模型失败', type: 'error', duration: 1000 });
+                });
+            },
+            getCookie(name) {
+              let cookieValue = null;
+              if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                  const cookie = cookies[i].trim();
+                  if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                  }
+                }
+              }
+              return cookieValue;
+            }
+          },
+          mounted() {
+            this.fetchBasecallModel();
+          },
+          computed: {
+            isFormValid() {
+              return this.form.sampleName && this.form.inputFile != '';
+            }
+          },
+          watch: {
+            'form.filter'(newVal) {
+              if (newVal === 'true') {
+                this.form.minQ = '6';
+                this.form.minL = '100';
+              }
+            }
+          }
+        });
+      </script>
+  </body>
+</html>

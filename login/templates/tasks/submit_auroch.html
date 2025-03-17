@@ -134,9 +134,11 @@
               <h3 class="covid-analysis">Auroch分析</h3>
               <p></p>
               <div class="custom-divider"></div>
+              
               <el-form-item label="样本名称" required>
                 <el-input v-model="form.sampleName" class="custom-select"></el-input>
               </el-form-item>
+
               <el-form-item label="参考序列" required>
                 <el-select
                   v-model="form.referenceSequence"
@@ -326,6 +328,7 @@
                 this.isUploading = false;
               }
             },
+
             beforeUploadFastq(file) {
               const isFastq = file.name.endsWith('.fastq') || file.name.endsWith('.fastq.gz');
               if (!isFastq) {
@@ -371,6 +374,7 @@
                 }
               });
             },
+
             handleFileTypeChange(value) {
               if (value === 'pod5' || value === 'fastq') {
                 this.form.inputFile = '';
@@ -437,24 +441,24 @@
               }
             },
             viewFile() {
-            const jobUrl = '/admin/#/login/view_job/';
-            const newWindow = window.open(jobUrl, '_blank');
+              const jobUrl = '/admin/#/login/view_job/';
+              const newWindow = window.open(jobUrl, '_blank');
 
-            const attemptClick = function () {
-              if (newWindow.document.readyState === 'complete') {
-                const menuItems = newWindow.document.querySelectorAll('ul.el-menu li.el-menu-item');
-                menuItems.forEach(item => {
-                  const span = item.querySelector('span');
-                  if (span && span.textContent.trim() === '任务管理') {
-                    item.click();
-                  }
-                });
-              } else {
-                setTimeout(attemptClick, 50);
-              }
-            };
+              const attemptClick = function () {
+                if (newWindow.document.readyState === 'complete') {
+                  const menuItems = newWindow.document.querySelectorAll('ul.el-menu li.el-menu-item');
+                  menuItems.forEach(item => {
+                    const span = item.querySelector('span');
+                    if (span && span.textContent.trim() === '任务管理') {
+                      item.click();
+                    }
+                  });
+                } else {
+                  setTimeout(attemptClick, 50);
+                }
+              };
 
-            setTimeout(attemptClick, 50);
+              setTimeout(attemptClick, 50);
           },
             fetchBasecallModel() {
               axios.get('/login/getmodel/')

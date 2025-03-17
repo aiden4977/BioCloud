@@ -70,13 +70,17 @@
             <el-button type="primary" @click="refreshTableData" style="margin-left: 10px;">刷新</el-button>
           </div>
 
+          <!-- <div id="app">
+              <p>Current User: {{ currentUserName }}</p>
+          </div> -->
+          
           <el-table :data="filteredData" style="width: 100%; margin-top: 20px;" @selection-change="handleSelectionChange"
             :default-sort="{ prop: 'created_at', order: 'descending' }">
             <el-table-column type="selection" width="30"></el-table-column>
             
             <el-table-column prop="id" label="项目ID" width="90"></el-table-column>
             <!-- <el-table-column prop="projectName" label="项目ID" width="90"></el-table-column> -->
-            
+            <!-- <el-table-column prop="userName" label="操作用户" width="90"></el-table-column> -->
             <el-table-column prop="workfolw" label="workflow" width="90"></el-table-column>
             <el-table-column prop="sampleName" label="样本名称" width="150"></el-table-column>
             <el-table-column prop="created_at" label="创建时间" width="150" :formatter="formatDate" sortable></el-table-column>
@@ -87,6 +91,7 @@
                 </el-tag>
               </template>
             </el-table-column>
+            
             <el-table-column label="操作" width="180">
               <template slot-scope="scope">
                 <el-button type="text" size="small" @click="showDetails(scope.row)">详情</el-button>
@@ -114,6 +119,8 @@
 
               </template>
             </el-table-column>
+
+            
             
           </el-table>
         </el-main>
@@ -129,6 +136,7 @@
       window.addEventListener('load', function() {
         document.body.classList.remove('hidden');
         console.log('所有资源已加载，页面显示');
+        
       });
     new Vue({
       el: '#app',
@@ -139,6 +147,7 @@
           search: '',
           dialogVisible: false,
           currentSample: null,
+          currentUserName: '{{ currentUserName }}',  // 将 Django 变量传递给 Vue
         };
       },
       computed: {
@@ -148,7 +157,8 @@
               item.sampleName.toLowerCase().includes(this.search.toLowerCase())
             );
           } else {
-            return this.tableData;
+            // return this.tableData;
+            return this.tableData.filter(item => item.userName === this.currentUserName);
           }
         },
       },

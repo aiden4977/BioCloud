@@ -48,4 +48,5 @@ urlpatterns = [
     #2024-11-14
     #get running tasks count
     #path('api/running_tasks_count/', views.get_running_tasks_count),
+    
 ]

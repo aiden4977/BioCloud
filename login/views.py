@@ -2,8 +2,8 @@ import json
 import shutil
 import os
 from django.shortcuts import render, HttpResponseRedirect, get_object_or_404
-from rest_framework.response import Response
-from rest_framework import status,generics
+from rest_framework.response import Response # 数据库交互
+from rest_framework import status,generics # 数据库交互
 from django.http import JsonResponse,HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import FileSystemStorage
@@ -124,7 +124,8 @@ def index(request):
 
 
 def view_job(request):
-    return render(request, 'admin/view_job.html')
+    currentUser = request.user.username # 拿到当前登录的用户名
+    return render(request, 'admin/view_job.html',{'currentUserName': currentUser})
 
 def view_job_detail(request, pk):
     #job = get_object_or_404(JobUniversal, pk=pk)
@@ -164,7 +165,6 @@ def Endurance_toxicity_analysis(request):
     return render(request, 'tasks/Endurance_toxicity_analysis.html')
     
 def read_log(request, pk):
-    
     print(pk)
     task = get_object_or_404(JobUniversal, id=pk)
     
@@ -270,7 +270,7 @@ class CreateJob_Auroch(generics.ListCreateAPIView):
         jobArgs['data'] = DATADIR  # 设定data目录路径
         jobArgs['jobName'] = 'Auroch'
         jobArgs['projectName'] = 'Test'
-        jobArgs['userName'] = 'TestUser'
+        jobArgs['userName'] = request.user.username # TestUser
         sampleName=request.data.get('sampleName')
         # Auroch任务参数
         auroch_param = {'sampleName': request.data.get('sampleName'), 
@@ -299,7 +299,7 @@ class CreateJob_Auroch(generics.ListCreateAPIView):
             # 创建模型实例
             serializer = self.get_serializer(data=data)
             serializer.is_valid(raise_exception=True)
-            self.perform_create(serializer)
+            self.perform_create(serializer) # 这个函数调用之后,就会将操作写入数据库吗?
 
             id = serializer.instance.id
             print(f'idw为{id}')
@@ -329,7 +329,7 @@ class CreateJob_Pod5Plotter(generics.ListCreateAPIView):
         jobArgs['data'] = DATADIR  # 设定data目录路径
         jobArgs['jobName'] = 'Pod5Plotter'
         jobArgs['projectName'] = 'Test'
-        jobArgs['userName'] = 'TestUser'
+        jobArgs['userName'] = request.user.username # TestUser
         pod5_paths = self.get_full_path(jobArgs, request.data.get('pod5Files'))
         sampleName=request.data.get('sampleName')
         
@@ -383,7 +383,7 @@ class CreateJob_Covid(generics.ListCreateAPIView):
         jobArgs['data'] = DATADIR  # 设定data目录路径
         jobArgs['jobName'] = 'Covid19'
         jobArgs['projectName'] = 'Test'
-        jobArgs['userName'] = 'TestUser'
+        jobArgs['userName'] = request.user.username # TestUser
         sampleName = request.data.get('sampleName')
         
         # 构建json参数
@@ -435,7 +435,7 @@ class CreateJob_Mapping(generics.ListCreateAPIView):
         jobArgs['data'] = DATADIR  # 设定data目录路径
         jobArgs['jobName'] = '病原比对流程'
         jobArgs['projectName'] = 'Test'
-        jobArgs['userName'] = 'TestUser'
+        jobArgs['userName'] = request.user.username # TestUser
         sampleName = request.data.get('sampleName')
         print(f'idw为{request.data.get('mergeFastq')}')
         # 构建json参数
@@ -492,7 +492,7 @@ class CreateJob_Sewage(generics.ListCreateAPIView):
         jobArgs['data'] = DATADIR  # 设定data目录路径
         jobArgs['jobName'] = '污水分析流程'
         jobArgs['projectName'] = 'Test'
-        jobArgs['userName'] = 'TestUser'
+        jobArgs['userName'] = request.user.username # TestUser
         sampleName = request.data.get('sampleName')
         print(f'idw为{request.data.get('mergeFastq')}')
         # 构建json参数
@@ -554,7 +554,7 @@ class CreateJob_DrugVir(generics.ListCreateAPIView):
         jobArgs['data'] = DATADIR  # 设定data目录路径
         jobArgs['jobName'] = '耐药毒力分析'
         jobArgs['projectName'] = 'Test'
-        jobArgs['userName'] = 'TestUser'
+        jobArgs['userName'] = request.user.username # TestUser
         sampleName = request.data.get('sampleName')
         # 构建json参数
         json_param = json.dumps({'input_file': self.get_full_path(jobArgs, request.data.get('input_file')),
@@ -733,6 +733,7 @@ def download_fastq(request, pk):
 def submit_map256(request):
     return render(request, 'tasks/submit_map256.html')
 
+#journalctl -fxeu nanopore.test.service
 class CreateJob_Map256(generics.ListCreateAPIView):
     queryset = JobUniversal.objects.all()
     serializer_class = JobUniversalSerializer
@@ -741,32 +742,50 @@ class CreateJob_Map256(generics.ListCreateAPIView):
         return [f'{DATADIR}/{filename}' for filename in filenames]
     
     def create(self, request):
+        
+        jobArgs = {}
+        jobArgs['workdir'] = WORKDIR  # 设定workdir目录路径
+        jobArgs['data'] = DATADIR  # 设定data目录路径
+        jobArgs['jobName'] = 'Map256'
+        jobArgs['projectName'] = 'Test'
+        jobArgs['userName'] = request.user.username # TestUser
+
+        sampleName=request.data.get('sampleName')
+        
+        # 构建json参数
+        json_param = json.dumps({'pod5File': request.data.get('pod5Files'),
+                                 'Workflow':request.data.get('workflow'),
+                                 'filter': request.data.get('filter')
+                                 })
+        print('构建参数ok')
         try:
-            data = request.data
-            jobArgs = json.loads(data['jobArgs'])
-            sampleName = data['sampleName']
-            
-            # 生成工作目录
-            random_code = generate_random_string()
-            work_dir = f'{WORKDIR}/Map256_{sampleName}_{random_code}'
-            
-            # 获取输入文件完整路径
-            input_files = self.get_full_path(jobArgs, jobArgs['inputFile'])
-            jobArgs['inputFile'] = input_files
-            
-            # 创建任务记录
-            job = JobUniversal.objects.create(
-                sampleName=sampleName,
-                parameters=json.dumps(jobArgs),
-                workfolw='Map256',
-                workDir=work_dir,
-                status='pending'
-            )
-            
-            # 启动异步任务
-            result = execute_map256.delay(job.id)
-            
-            return Response({'id': job.id}, status=status.HTTP_201_CREATED)
-            
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            # 去重，并创建模型实例的数据字典
+            if JobUniversal.objects.filter(sampleName=sampleName).exists():
+                random_suffix = generate_random_string()
+                sampleName = f"{sampleName}_{random_suffix}"
+            data = {
+                'sampleName': sampleName,
+                'workfolw': jobArgs['jobName'],
+                'workDir': os.path.join(jobArgs['workdir'], sampleName),
+                'projectName': jobArgs['projectName'],
+                'userName': jobArgs['userName'],
+                'parameters': json_param,
+                'status': 'queued',
+                'log': os.path.join(jobArgs['workdir'], sampleName, 'log'),
+            }
+            # 创建模型实例
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            id = serializer.instance.id
+            print(f'任务创建成功,任务ID---->idw为{id},任务执行完成70%...')
+            result = execute_map256.delay(id)
+            print(f'任务创建成功,任务ID---->idw为{id},任务执行完成89%...')
+        except Exception as err:
+            print(f'任务创建失败:{err}')
+
+        print(f'任务执行完成90%...')
+        headers = self.get_success_headers(serializer.data)
+        print('headers:',headers)
+        print(f'任务执行完成99%...')
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

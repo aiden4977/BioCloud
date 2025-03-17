@@ -156,6 +156,9 @@ SIMPLEUI_CONFIG = {
         {
             'name': 'pod5_plotter',
             'url': '/login/submit_pod5_plotter/'
+        },{
+            'name': 'Map256试剂评估',
+            'url': '/login/submit_map256/'
         },
             {
             'name': '丢数据Log文件解析',
@@ -214,8 +217,7 @@ META_GENOMIC_PATH = f'{SCRIPTDIR}/meta/Meta_genomics/bin/Meta_pipline.py'
 SEWAGE_PATH = f'{SCRIPTDIR}/sewage/Sewage_analysis/bin/Sewage_pipline.py'
 DRUGVIR_PATH = f'{SCRIPTDIR}/drugvir/Drugresist_virfactor/bin/Drugvir_pipline.py'
 HANDLE_LOG_PATH = f'{SCRIPTDIR}/handle_log/handle_log.py'
-
-
+MAP256_PATH = '/home/nanopore/01.Workdir/01.NAS/test/SCRIPT/map256_report/map256.py'
 
 
 

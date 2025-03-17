@@ -11,6 +11,7 @@ from .utils import generate_random_string
 from .task_utils.mapping import handle_mapping_input, handle_input_list, handle_drug_paired_input
 from .task_utils.auroch import handle_auroch_input, extract_pod5, write_config
 from .task_utils.pod5_ploter import handle_pod5ploter_input
+from .task_utils.map256 import handle_map256_input
 from AurochOnline.settings import POD5_BIN_PATH, PYTHON_BIN, DATADIR, POD5_PLOTER_PATH, POD5_PYTHON
 from .models import JobUniversal
 
@@ -38,6 +39,7 @@ def execute_auroch(id):
     parameters = ast.literal_eval(job.parameters)
     
     try:
+        
         #mkdir
         resubmit = os.path.exists(work_input_dir)
         os.makedirs(work_dir, exist_ok=True)
@@ -420,21 +422,41 @@ def execute_drugvir(id):
 
     job.save()
 
+#journalctl -fxeu celery.service
 @shared_task
 def execute_map256(id):
     from AurochOnline.settings import PYTHON_BIN, MAP256_PATH
     import ast
-    job = JobUniversal.objects.get(id=id)
+    job = JobUniversal.objects.get(id=id) # sql
     print(f'接收到{id}')
     job.status = 'running'
     job.save()
-
     work_dir = job.workDir
     work_input_dir = f'{work_dir}/input/'
     work_result_dir = f'{work_dir}/result/'
-    parameters = ast.literal_eval(job.parameters)
-    
+
+    if isinstance(job.parameters, str):
+        try:
+            parameters = ast.literal_eval(job.parameters)
+            print(parameters)
+        except (SyntaxError, ValueError) as e:
+            print(f"解析失败: {e}")
+            print(f"[类型]Type of job.parameters: {type(job.parameters)}") # [类型]Type of job.parameters: <class 'str'>
+            print(f"[值]Value of job.parameters: {repr(job.parameters)}") # [值]Value of job.parameters: '{"pod5File": null, "Workflow": null, "filter": null}'
+            parameters = json.loads(job.parameters)
+            print(f"解析成功: {parameters}")
+    else:
+        print(f"job.parameters 不是字符串，而是 {type(job.parameters)}")
+        
+    #parameters = ast.literal_eval(job.parameters)#这一步出现了问题
+
+    ##########################################################
+    # 1.File "/home/nanopore/01.Workdir/01.NAS/test/BioCloud/login/tasks.py",line 425, in execute_map256
+    # 2.ImportError: cannot import name 'MAP256_PATH' from 'AurochOnline.settings' (/home/nanopore/01.Workdir/01.NAS/test/BioCloud/AurochOnline/settings.py)
+    ##########################################################
+    print(f'before try')
     try:
+        print(f'after try')
         # 创建工作目录
         os.makedirs(work_dir, exist_ok=True)
         os.makedirs(work_input_dir, exist_ok=True)
@@ -443,21 +465,24 @@ def execute_map256(id):
         
         # 处理输入文件
         log.logger.info(f'正在准备输入文件')
-        input_files = handle_map256_input(
-            input_files=parameters['inputFile'],
+        print('handle_map256_input开始尝试调用...')
+        input_files = handle_map256_input( # 这个函数没有被定义
+            # input_files=parameters['inputFile'],
+            input_files = parameters.get('inputFile', []),
             outdir=work_input_dir,
             log=log
         )
-        
+        print('handle_map256_input调用成功')
         # 构建命令参数
-        input_command = f'--input {" ".join(input_files)}'
-        output_command = f'--output {work_result_dir}'
-        model_command = f'--model {parameters["model"]}' if 'model' in parameters else ''
+        input_command = f'--inPod5Path {" ".join(input_files)}'
+        # name_command = f'--name {" ".join(parameters['name'])}'
+        output_command = f'--outDir {work_result_dir}'
         
         # 运行Map256评估
         log.logger.info(f'开始Map256评估')
         result = subprocess.run(
-            [f'{PYTHON_BIN} {MAP256_PATH} {input_command} {output_command} {model_command} >>log 2>>log'],
+            # [f'{PYTHON_BIN} {MAP256_PATH} {input_command} {name_command} {output_command} >>log 2>>log'],
+            [f'{PYTHON_BIN} {MAP256_PATH} {input_command} {output_command} >>log 2>>log'],
             shell=True,
             cwd=work_dir,
             capture_output=True,

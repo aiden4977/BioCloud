@@ -20,6 +20,7 @@ var loginApp = new Vue({
             this.$nextTick(function () {
                 document.getElementById('login-form').submit();
             });
-        }
+        },
+        
     }
 });

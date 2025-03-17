@@ -79,8 +79,12 @@
         {% endif %}
     {% endblock %}
     {% block form %}
-    <p style="color: gray; font-size: small;">测试用户名test01 密码000000</p>
-        <form class="simpleui-form" action="{{ app_path }}" method="post" id="login-form">
+    <p style="color: gray; font-size: small;">测试用户名: test01 密码: 000000</p>
+    <p style="color: gray; font-size: small;">测试用户名: test02 密码: 000000</p>
+    <p style="color: gray; font-size: small;">测试用户名: TestUser 密码: 000000</p>
+        <!-- <form action="/admin/login/" method="post" id="login-form" class="simpleui-form"></form> -->
+        <!-- <form action="{{ app_path }}" method="post" id="login-form">{% csrf_token %} -->
+        <form class="simpleui-form" action="/admin/login/" method="post" id="login-form">
             {% csrf_token %}
             <div class="simpleui-input-inline">
                 <el-input prefix-icon="fas fa-user" v-model="username" name="username"
@@ -91,20 +95,37 @@
                           @keyup.enter.native="login()"
                           placeholder="{% trans 'password' %}" show-password></el-input>
             </div>
-            {% url 'admin_password_reset' as password_reset_url %}
-              {% if password_reset_url %}
+            
+            <!-- {% url 'admin_password_reset' as password_reset_url %}
+            {% if password_reset_url %}
 
-             <div class="password-reset-link">
-                <a class="forgot-password" href="{{ password_reset_url }}">{% trans 'Forgotten your password or username?' %}</a>
-              </div>
-              {% endif %}
+            <div class="password-reset-link">
+            <a class="forgot-password" href="{{ password_reset_url }}">{% trans 'Forgotten your password or username?' %}</a>
+            </div>
+            {% endif %} -->
+            
             <div class="simpleui-input-inline login-btn">
                 <el-button :icon="loading?'el-icon-loading':''" @click="login()"
                            type="primary">{% trans 'Log in' %}</el-button>
             </div>
-
+            
+            <!-- <div class="simpleui-input-inline login-btn">
+                <el-button :icon="loading?'el-icon-loading':''" @click="login()"
+                           type="primary">{% trans 'Register' %}</el-button>
+            </div> -->
+            <!-- <div class="simpleui-input-inline login-btn">
+                <a href="../Register.html">
+                    <el-button 
+                        :icon="loading ? 'el-icon-loading' : ''" 
+                        type="primary">
+                        {% trans 'Register' %}
+                    </el-button>
+                </a>
+            </div> -->
+            
             <input type="hidden" name="next" value="{{ next }}"/>
         </form>
+
     {% endblock %}
     </div>
 </div>
